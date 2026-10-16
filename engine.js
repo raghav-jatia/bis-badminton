@@ -1,4 +1,4 @@
-// ── BIS INTERHOUSE BADMINTON — RESULTS ENGINE ───────────────────────
+// ── BIS INTERHOUSE BADMINTON - RESULTS ENGINE ───────────────────────
 // Pure logic, no DOM, no network. The SAME file runs in three places:
 //   • the website (browser)            → global BADM
 //   • the Google Apps Script backend   → global BADM (pasted into Code.gs)
@@ -91,7 +91,7 @@ var BADM = (function () {
   // Prelims: 1 game to 11, no extension (next point at 10-10 wins).
   // Semis:   1 game to 15, no extension (next point at 14-14 wins).
   // Final:   1 game to 15, setting to 17 at 14-14.
-  // 3rd place: not specified — accept either the 11 or the 15 format.
+  // 3rd place: not specified - accept either the 11 or the 15 format.
   // Returns { ok:false, error } for impossible input, or { ok:true, warn? }.
   // retired = true: the score when a player retired hurt. Any order is fine
   // (the player who retired may have been ahead), no format check.
@@ -387,7 +387,7 @@ var BADM = (function () {
       });
     });
 
-    // house standings — shared position on equal points; a tie never skips the next place
+    // house standings - shared position on equal points; a tie never skips the next place
     var order = HOUSES.slice().sort(function (x, y) { return totals[y] - totals[x] || HOUSES.indexOf(x) - HOUSES.indexOf(y); });
     var standings = [], pos = 0;
     order.forEach(function (h, i) {
@@ -444,7 +444,7 @@ var BADM = (function () {
     return out;
   }
 
-  // Signature of what is stored for a match — used to detect two phones
+  // Signature of what is stored for a match - used to detect two phones
   // editing the same match at once.
   function storedSig(row) {
     return [key(row.winner), outcomeKey(row.outcome), norm(row.winner_pts), norm(row.loser_pts)].join('|');

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BIS Interhouse Badminton 2026–27 — Winners</title>
+<title>BIS Interhouse Badminton 2026-27 - Winners</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏸</text></svg>">
 <link rel="stylesheet" href="styles.css">
 <script src="config.js"></script>
@@ -48,17 +48,17 @@ function render(res) {
   }).join('');
 
   var cats = model.byAge.filter(function (c) { return filter === 'all' || new RegExp(filter, 'i').test(c.name); });
-  document.getElementById('winners').innerHTML = cats.map(function (c) { return APP.catTile(c, true); }).join('') ||
+  document.getElementById('winners').innerHTML = cats.map(function (c) { return APP.catTile(c, false); }).join('') ||
     '<div class="empty">Nothing here yet.</div>';
 
-  // Points table — only completed categories count
+  // Points table - only completed categories count
   var H = BADM.HOUSES;
   var rows = model.byAge.filter(function (c) { return !(c.kind === 'single' && c.state === 'single'); }).map(function (c) {
     var counted = c.state === 'complete';
     return '<tr><td>' + esc(c.name) + (counted ? '' : ' <span style="color:var(--dim);font-size:12px">· ' + (c.state === 'postponed' ? 'postponed' : c.state === 'progress' ? 'in progress' : 'upcoming') + '</span>') + '</td>' +
       H.map(function (h) {
         var v = counted ? c.points[h] : null;
-        return '<td class="num ' + (v ? 'h-' + h : 'zero') + '">' + (v === null ? '–' : v) + '</td>';
+        return '<td class="num ' + (v ? 'h-' + h : 'zero') + '">' + (v === null ? '-' : v) + '</td>';
       }).join('') + '</tr>';
   }).join('');
   document.getElementById('ptable').innerHTML =

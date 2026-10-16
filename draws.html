@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BIS Interhouse Badminton 2026–27 — Draws</title>
+<title>BIS Interhouse Badminton 2026-27 - Draws</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏸</text></svg>">
 <link rel="stylesheet" href="styles.css">
 <script src="config.js"></script>
@@ -100,7 +100,7 @@ function render(res) {
       var list = c.players.filter(function (p) { return (p.house || '') === h; });
       return '<div class="roster-col"><div class="roster-head rh-' + (h || 'none') + '">' + (h || 'House TBC') + '</div>' +
         (list.length ? list.map(function (p) { return '<div class="roster-p ' + APP.hcls(p.house) + '">' + esc(p.name) + '</div>'; }).join('')
-                     : '<div class="roster-empty">—</div>') + '</div>';
+                     : '<div class="roster-empty">-</div>') + '</div>';
     }).join('') + '</div>';
 
   document.getElementById('cat').innerHTML = html;

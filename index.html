@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BIS Interhouse Badminton 2026–27 — Home</title>
-<meta name="description" content="Live results, draws and house standings for the BIS Interhouse Badminton Championship 2026–27.">
+<title>BIS Interhouse Badminton 2026-27 - Home</title>
+<meta name="description" content="Live results, draws and house standings for the BIS Interhouse Badminton Championship 2026-27.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏸</text></svg>">
 <link rel="stylesheet" href="styles.css">
 <script src="config.js"></script>
@@ -51,7 +51,7 @@
     </svg>
     <div class="hero-text">
       <div class="hero-label">BIS Interhouse Championship</div>
-      <div class="hero-title">Badminton<br>2026–27</div>
+      <div class="hero-title">Badminton<br>2026-27</div>
       <div class="hero-sub" id="hero-sub">Saturday, 17 October 2026 &nbsp;·&nbsp; NSCI, Worli</div>
     </div>
   </div>
@@ -89,7 +89,7 @@ function render(res) {
   document.getElementById('hero-sub').innerHTML = esc(cfg.date) + (cfg.venue ? ' &nbsp;·&nbsp; ' + esc(cfg.venue) : '');
   document.getElementById('notice').innerHTML = cfg.notice ? '<div class="notice"><b>Notice:</b> ' + esc(cfg.notice) + '</div>' : '';
 
-  // House standings — medal once points exist, otherwise a star in the house colour
+  // House standings - medal once points exist, otherwise a star in the house colour
   document.getElementById('scoreboard').innerHTML = model.standings.map(function (s) {
     var badge = model.anyPoints ? APP.medal(s.pos) : '<span class="h-' + s.house + '">★</span>';
     var meta = [];
@@ -109,7 +109,7 @@ function render(res) {
   var latest = model.latest.slice(0, 3);
   document.getElementById('latest').innerHTML = latest.length
     ? latest.map(function (m) { return APP.matchCard(m, { showCat: true }); }).join('')
-    : '<div class="empty">No results yet — first matches start at 10:00 AM.</div>';
+    : '<div class="empty">No results yet - first matches start at 10:00 AM.</div>';
 
   // Category results (schedule order)
   document.getElementById('cat-results').innerHTML = model.categories.map(function (c) { return APP.catTile(c, false); }).join('');

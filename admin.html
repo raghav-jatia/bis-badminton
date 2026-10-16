@@ -4,12 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<title>Badminton — Enter Results</title>
+<title>ADMIN - Badminton Results Entry</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏸</text></svg>">
 <link rel="stylesheet" href="styles.css">
 <script src="config.js"></script>
 <style>
   .page-wrap { max-width: 640px; padding-top: 16px; padding-bottom: 120px; }
+  .admin-header { background: linear-gradient(135deg, #4A0E10 0%, #8E1F22 55%, #C2353A 100%); box-shadow: 0 4px 20px rgba(120,20,24,0.55); }
+  .admin-header .header-logo { color: #FFFFFF; }
+  .admin-header .header-logo span { color: rgba(255,255,255,0.85); }
+  .admin-badge {
+    margin-left: auto; font-family: 'Oswald', sans-serif; font-size: 22px; font-weight: 700;
+    letter-spacing: 5px; text-transform: uppercase; color: #8E1F22; background: #FFFFFF;
+    padding: 5px 12px 5px 16px; border-radius: 8px; line-height: 1.1;
+  }
   .adm-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
   .adm-bar .refresh-bar { margin: 0; flex: 1; min-width: 0; }
   .btn {
@@ -103,8 +111,9 @@
 </style>
 </head>
 <body>
-<header class="site-header"><div class="header-inner">
-  <a class="header-logo" href="index.html">BIS Badminton<span>Results entry — admin</span></a>
+<header class="site-header admin-header"><div class="header-inner">
+  <a class="header-logo" href="index.html">BIS Badminton<span>Results entry</span></a>
+  <span class="admin-badge">Admin</span>
 </div></header>
 
 <div class="page-wrap" id="app"></div>
@@ -186,7 +195,7 @@ function draw() {
 
   var h = '';
   h += '<div class="adm-bar"><div class="refresh-bar"><span class="live-dot ' + (SOURCE === 'live' ? '' : 'err') + '"></span><span>' +
-    (SOURCE === 'live' ? 'Connected' + (MODEL.latest[0] ? ' · last saved ' + APP.clock(MODEL.latest[0].updatedAt) : '') : 'Not connected — showing last copy') +
+    (SOURCE === 'live' ? 'Connected' + (MODEL.latest[0] ? ' · last saved ' + APP.clock(MODEL.latest[0].updatedAt) : '') : 'Not connected - showing last copy') +
     '</span></div><button class="btn sm ghost" id="reload">↻ Refresh</button><a class="btn sm ghost" href="index.html" style="text-decoration:none">Site</a></div>';
 
   // Sheet problems (houses summarised)
@@ -202,7 +211,7 @@ function draw() {
     c.podium.forEach(function (p) { if (p.noHouse) pend.push(c.name + ': ' + p.player.name + ' (' + APP.ordinal(p.pos) + ', ' + p.pts + ' pts)'); });
   });
   if (pend.length) {
-    h += '<details class="issues" open><summary>⏳ Points not counted yet — house missing (' + pend.length + ')</summary>' +
+    h += '<details class="issues" open><summary>⏳ Points not counted yet - house missing (' + pend.length + ')</summary>' +
       pend.map(function (t) { return '<div>• ' + esc(t) + '</div>'; }).join('') +
       '<div style="color:var(--dim)">Add their house on the Players tab and these points go onto the site straight away.</div></details>';
   }
@@ -241,7 +250,7 @@ function catView(c) {
   var done = c.matches.filter(function (m) { return m.status === 'done'; });
 
   h += '<div class="group-label">Ready to play (' + ready.length + ')</div>';
-  h += ready.length ? ready.map(readyCard).join('') : '<div class="empty">' + (c.state === 'complete' ? 'Category finished 🎉' : 'Nothing ready — waiting on results below.') + '</div>';
+  h += ready.length ? ready.map(readyCard).join('') : '<div class="empty">' + (c.state === 'complete' ? 'Category finished 🎉' : 'Nothing ready - waiting on results below.') + '</div>';
   if (waiting.length) {
     h += '<div class="group-label">Waiting for earlier results (' + waiting.length + ')</div>';
     h += '<div class="match-list">' + waiting.map(function (m) { return APP.matchCard(m); }).join('') + '</div>';
@@ -275,7 +284,7 @@ function readyCard(m) {
   else if (ed && ed.outcome === 'joint') h += jointEditor(m);
   else {
     h += '<button class="linkish" data-double="' + esc(m.id) + '">Neither player turned up</button>';
-    if (m.rk === '3p') h += '<br><button class="linkish" style="margin-top:2px" data-joint="' + esc(m.id) + '">Not played — both get joint 3rd</button>';
+    if (m.rk === '3p') h += '<br><button class="linkish" style="margin-top:2px" data-joint="' + esc(m.id) + '">Not played - both get joint 3rd</button>';
   }
   return h + '</div>';
 }
@@ -288,9 +297,9 @@ function editor(m, ed) {
     '<button class="btn sm' + (ed.outcome === 'retired' ? ' on' : '') + '" data-outcome="retired">Retired</button></div>' +
     (ed.outcome === 'retired' ? '<div class="hint" style="color:var(--white)">' + esc(loser.name) + ' retired hurt during the match. ' + esc(ed.winner) + ' goes through.</div>' : '') +
     (ed.outcome === 'played' || ed.outcome === 'retired'
-      ? '<div class="score-row"><div class="f"><label>' + esc(firstName(ed.winner)) + ' (winner)</label><input id="sw" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="30" placeholder="—" value="' + esc(ed.w) + '"></div>' +
-        '<div class="dash">–</div><div class="f"><label>' + esc(firstName(loser.name)) + '</label><input id="sl" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="30" placeholder="—" value="' + esc(ed.l) + '"></div></div>' +
-        '<div class="hint">' + (ed.outcome === 'retired' ? 'Score when they stopped (optional).' : 'Score is optional — leave blank if you don\'t have it.') + '</div>'
+      ? '<div class="score-row"><div class="f"><label>' + esc(firstName(ed.winner)) + ' (winner)</label><input id="sw" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="30" placeholder="-" value="' + esc(ed.w) + '"></div>' +
+        '<div class="dash">-</div><div class="f"><label>' + esc(firstName(loser.name)) + '</label><input id="sl" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="30" placeholder="-" value="' + esc(ed.l) + '"></div></div>' +
+        '<div class="hint">' + (ed.outcome === 'retired' ? 'Score when they stopped (optional).' : 'Score is optional - leave blank if you don\'t have it.') + '</div>'
       : '<div class="hint">' + esc(loser.name) + ' did not turn up / could not play. ' + esc(ed.winner) + ' goes through.</div>') +
     '<div class="err" id="edit-err"></div>' +
     '<button class="btn gold block" id="save">Save · ' + esc(ed.winner) + ' wins</button>' +
@@ -444,7 +453,7 @@ function send(body) {
       var id = body.matchId;
       EDIT = null; draw();
       var extra = r.cleared && r.cleared.length ? ' · cleared ' + r.cleared.map(function (c) { return c.label; }).join(', ') : '';
-      toast('✓ Saved — ' + (r.message || '') + extra, body.action === 'setResult' ? id : null);
+      toast('✓ Saved - ' + (r.message || '') + extra, body.action === 'setResult' ? id : null);
     } else if (r.code === 'STALE') {
       EDIT = null; draw();
       toast(r.error, null, true);
@@ -457,7 +466,7 @@ function send(body) {
     setBusy(false);
     if (save) { save.disabled = false; save.textContent = 'Try again'; }
     var e = document.getElementById('edit-err');
-    var msg = 'Not saved — no connection. Check your signal and tap again.';
+    var msg = 'Not saved - no connection. Check your signal and tap again.';
     if (e) e.textContent = msg; else toast(msg, null, true);
   });
 }

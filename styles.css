@@ -275,7 +275,9 @@ a { color: inherit; }
 .prow .sc { font-family: 'Oswald', sans-serif; font-size: 20px; font-weight: 700; color: var(--dim); flex-shrink: 0; min-width: 24px; text-align: right; }
 .prow.win { background: rgba(255,206,92,0.12); border: 1px solid rgba(255,206,92,0.45); }
 .prow.win .sc { color: var(--gold); }
-.prow.lose { opacity: 0.55; border: 1px solid transparent; }
+.prow.lose { border: 1px solid transparent; }
+.prow.lose .nm, .prow.lose .sc { opacity: 0.55; }
+.wo-tag.ret-tag { color: #FF8A8C; border-color: rgba(240,89,91,0.55); }
 .prow.idle { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); }
 .prow .tick { color: var(--gold); font-weight: 800; flex-shrink: 0; }
 .prow .pend { font-style: italic; color: var(--dim); font-weight: 500; font-size: 14px; }
@@ -299,7 +301,7 @@ a { color: inherit; }
 .pod-line { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; padding: 3px 0; }
 .pod-line .md { width: 22px; flex-shrink: 0; text-align: center; }
 .pod-line .nm { flex: 1; min-width: 0; }
-.pod-line .pt { font-family: 'Oswald', sans-serif; color: var(--gold); font-size: 13px; flex-shrink: 0; }
+.pod-line .pt { font-family: 'Oswald', sans-serif; font-weight: 600; color: var(--gold); font-size: 16px; flex-shrink: 0; min-width: 30px; text-align: right; }
 .res-sub { font-size: 13px; color: var(--dim); }
 
 /* ── FILTER CHIPS ── */

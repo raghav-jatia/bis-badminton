@@ -1,4 +1,4 @@
-// ── BIS INTERHOUSE BADMINTON — shared page helpers ───────────────────
+// ── BIS INTERHOUSE BADMINTON - shared page helpers ───────────────────
 // Data flow: Google Sheet → Apps Script web app (config.js API_URL) → here
 // → BADM.build() (engine.js) → each page's render().
 var APP = (function () {
@@ -107,7 +107,7 @@ var APP = (function () {
     var links = [['index.html', 'Home'], ['schedule.html', 'Schedule'], ['draws.html', 'Draws'], ['winners.html', 'Winners']];
     var html =
       '<header class="site-header"><div class="header-inner">' +
-      '<a class="header-logo" href="index.html">BIS Badminton<span>Interhouse Championship — 2026–27</span></a>' +
+      '<a class="header-logo" href="index.html">BIS Badminton<span>Interhouse Championship - 2026-27</span></a>' +
       '<span class="header-date" id="hdr-date">' + esc(cfg && cfg.date ? cfg.date.replace(/^\w+,\s*/, '') : '17 October 2026') +
       '<br>' + esc(cfg && cfg.venue ? cfg.venue : 'NSCI, Worli') + '</span>' +
       '</div></header>' +
@@ -172,7 +172,7 @@ var APP = (function () {
     } else if (c.state === 'progress') {
       body = '<div class="res-sub">' + c.played + ' of ' + c.total + ' matches played</div>';
     } else if (c.state === 'postponed') {
-      body = '<div class="res-sub">' + esc(c.note || 'Postponed — new date to be announced') + '</div>';
+      body = '<div class="res-sub">' + esc(c.note || 'Postponed - new date to be announced') + '</div>';
     } else if (c.state === 'single') {
       body = '<div class="res-sub">Single entry: ' + pname(c.players[0]) + '</div>';
     } else {
@@ -211,7 +211,7 @@ var APP = (function () {
     if (m.wPts !== null && m.wPts !== undefined && m.decided) sc = isWin ? m.wPts : (isLose ? m.lPts : '');
     var tag = '';
     if (isWin && m.how === 'walkover') tag = '<span class="wo-tag">W/O</span>';
-    if (isWin && m.how === 'retired') tag = '<span class="wo-tag">RET</span>';
+    if (isLose && m.how === 'retired') tag = '<span class="wo-tag ret-tag">RETIRED</span>';
     if (m.how === 'joint' && s.type === 'player') tag = '<span class="wo-tag">=3RD</span>';
     if (isWin && m.how === 'auto') tag = '<span class="wo-tag">' + (m[sideKey === 'a' ? 'b' : 'a'].why === 'bye' ? 'BYE' : 'W/O') + '</span>';
     return '<div class="prow ' + cls + '">' +
@@ -226,7 +226,6 @@ var APP = (function () {
     var right = '';
     if (m.how === 'double') right = 'Both absent';
     else if (m.how === 'joint') right = 'Not played · joint 3rd';
-    else if (m.how === 'retired') right = 'Retired hurt' + (m.hasStored && m.updatedAt ? ' · ' + clock(m.updatedAt) : '');
     else if (m.how === 'empty') right = 'No players';
     else if (m.decided && m.hasStored && m.updatedAt) right = clock(m.updatedAt);
     else if (!m.decided && m.status === 'ready') right = 'Up next';
