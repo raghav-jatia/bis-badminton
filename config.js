@@ -5,7 +5,7 @@ window.BADM_CONFIG = {
   API_URL: 'https://script.google.com/macros/s/AKfycbzIijd9Vat1saoKHD9eL1I7Ymx7S3KMZHLVD6Dl4XydbeDU3IH0FsIzzus-5KrNVazp/exec',
 
   // Google Analytics 4 Measurement ID for this site, e.g. 'G-AB12CD34EF'.
-  GA_ID: '',
+  GA_ID: 'G-MDQKN995SE',
 
   // How often public pages refresh (milliseconds).
   REFRESH_MS: 20000
