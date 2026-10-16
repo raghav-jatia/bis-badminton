@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BIS Interhouse Badminton 2026–27 — Schedule</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏸</text></svg>">
+<link rel="stylesheet" href="styles.css">
+<script src="config.js"></script>
+</head>
+<body>
+<div id="nav-placeholder"></div>
+<div class="page-wrap">
+
+  <div id="warnings"></div>
+  <div class="page-title">Schedule</div>
+  <div class="refresh-bar"><span class="live-dot off" id="live-dot"></span><span id="stamp">Connecting…</span></div>
+
+  <div class="notice">Arrive at the venue <b>20 minutes</b> before your category's start time and report to the match desk <b>5 minutes</b> before your match. Finish times are approximate and depend on how matches progress.</div>
+
+  <div id="sessions"></div>
+
+  <div class="section-head">Match Format</div>
+  <div class="sched">
+    <div class="sched-row"><div class="sched-time"><b>Prelims</b></div><div>1 game to 11 points (rally scoring). No extension at 10-all: next point wins.</div></div>
+    <div class="sched-row"><div class="sched-time"><b>Semis</b></div><div>1 game to 15 points. No extension at 14-all: next point wins.</div></div>
+    <div class="sched-row"><div class="sched-time"><b>Final</b></div><div>1 game to 15 points, with setting to 17 at 14-all.</div></div>
+    <div class="sched-row"><div class="sched-time"><b>Reporting</b></div><div>A player not on court within 2 minutes of being called loses by walkover.</div></div>
+  </div>
+
+  <div class="section-head">Venue</div>
+  <div class="sched">
+    <div class="sched-row"><div class="sched-time"><b>NSCI</b><span>Worli</span></div><div>Parking at NSCI: car ₹200 · bike ₹80</div></div>
+  </div>
+
+</div>
+
+<script src="seed.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+<script>
+APP.analytics();
+APP.mountNav(null);
+var esc = APP.esc;
+
+function render(res) {
+  var model = BADM.build(res.data);
+  APP.mountNav(model);
+  APP.stamp(res, model);
+  document.getElementById('warnings').innerHTML = APP.warningsHTML(res, model);
+
+  // Sessions in the order of the Categories tab
+  var sessions = [], bySession = {};
+  model.categories.forEach(function (c) {
+    if (!c.session || c.postponed || c.kind !== 'bracket') return;
+    if (!bySession[c.session]) { bySession[c.session] = { time: c.session, until: c.dispersal, cats: [] }; sessions.push(bySession[c.session]); }
+    bySession[c.session].cats.push(c);
+  });
+
+  var html = sessions.map(function (s) {
+    var allDone = s.cats.every(function (c) { return c.state === 'complete'; });
+    var anyOn = s.cats.some(function (c) { return c.state === 'progress'; });
+    var badge = allDone ? '<span class="status-badge st-completed">Completed</span>'
+              : anyOn ? '<span class="status-badge st-progress">● On now</span>'
+              : '<span class="status-badge st-upcoming">Upcoming</span>';
+    return '<div class="sess' + (allDone ? ' done' : anyOn ? ' now' : '') + '">' +
+      '<div class="sess-head"><span class="sess-time">' + esc(s.time) + '</span>' +
+      (s.until ? '<span class="sess-until">till ~' + esc(s.until) + '</span>' : '') + badge + '</div>' +
+      s.cats.map(catRow).join('') + '</div>';
+  }).join('');
+
+  var post = model.categories.filter(function (c) { return c.postponed; });
+  if (post.length) {
+    html += '<div class="sess"><div class="sess-head"><span class="sess-time">Date TBA</span><span class="status-badge st-postponed">Postponed</span></div>' +
+      post.map(function (c) {
+        return '<a class="sess-row" href="draws.html#' + APP.catSlug(c.name) + '"><div class="sess-row-top"><span class="sess-cat">' + esc(c.name) + '</span></div>' +
+          '<div class="sess-meta"><span>' + esc(c.note || 'New date to be announced.') + '</span></div></a>';
+      }).join('') + '</div>';
+  }
+
+  var singles = model.categories.filter(function (c) { return c.kind === 'single' && !c.postponed; });
+  if (singles.length) {
+    html += '<div class="sess"><div class="sess-head"><span class="sess-time">No matches</span><span class="sess-until">single entry</span></div>' +
+      singles.map(function (c) {
+        return '<a class="sess-row" href="draws.html#' + APP.catSlug(c.name) + '"><div class="sess-row-top"><span class="sess-cat">' + esc(c.name) + '</span>' +
+          '<span>' + APP.pname(c.players[0]) + '</span></div></a>';
+      }).join('') + '</div>';
+  }
+
+  document.getElementById('sessions').innerHTML = html || '<div class="empty">Schedule coming soon.</div>';
+}
+
+function catRow(c) {
+  var pct = c.total ? Math.round(100 * c.played / c.total) : 0;
+  var right = '';
+  if (c.state === 'complete') {
+    var w = c.podium.filter(function (p) { return p.pos === 1; })[0];
+    right = w ? '🥇 ' + APP.pname(w.player) : 'Finished';
+  } else {
+    var ready = c.matches.filter(function (m) { return m.status === 'ready'; }).map(function (m) { return m.label; });
+    if (ready.length) right = '<span class="sess-next">Up next: ' + esc(ready.slice(0, 4).join(' · ')) + (ready.length > 4 ? ' …' : '') + '</span>';
+  }
+  return '<a class="sess-row" href="draws.html#' + APP.catSlug(c.name) + '">' +
+    '<div class="sess-row-top"><span class="sess-cat">' + esc(c.name) + '</span>' + APP.stateBadge(c) + '</div>' +
+    '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
+    '<div class="sess-meta"><span><b>' + c.played + '</b> of ' + c.total + ' matches played</span><span>' + right + '</span></div></a>';
+}
+
+APP.autoRefresh(render);
+</script>
+</body>
+</html>

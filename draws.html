@@ -44,7 +44,7 @@ function render(res) {
   res = LAST;
   MODEL = BADM.build(res.data);
   APP.mountNav(MODEL);
-  APP.stamp(res);
+  APP.stamp(res, MODEL);
   document.getElementById('warnings').innerHTML = APP.warningsHTML(res, MODEL);
   if (!current || !MODEL.byName[current.toLowerCase()]) current = pickDefault(MODEL);
 
@@ -73,10 +73,9 @@ function render(res) {
 
   if (c.kind === 'single') {
     var p = c.players[0];
-    html += '<div class="mcard done"><div class="mcard-meta"><span>Single entry</span></div>' +
-      '<div class="prow ' + (c.state === 'complete' ? 'win' : 'idle') + '">' + (c.state === 'complete' ? '<span class="tick">✓</span>' : '') +
-      '<span class="nm">' + APP.pname(p) + '</span><span class="wo-tag">W/O</span></div>' +
-      '<div class="mcard-foot">' + (c.state === 'complete' ? 'Only entry in this category — awarded 1st place by walkover.' : 'Only entry in this category — no points awarded.') + '</div></div>';
+    html += '<div class="mcard done"><div class="prow ' + (c.state === 'complete' ? 'win' : 'idle') + '">' +
+      (c.state === 'complete' ? '<span class="tick">✓</span>' : '') + '<span class="nm">' + APP.pname(p) + '</span>' + APP.houseTag(p.house) + '</div>' +
+      '<div class="mcard-foot">Only entry in this category.</div></div>';
   } else {
     var rounds = [], byRound = {};
     c.matches.forEach(function (m) {

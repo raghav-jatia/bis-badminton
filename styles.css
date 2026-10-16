@@ -129,7 +129,8 @@ a { color: inherit; }
 .house-tag {
   font-family: 'Oswald', sans-serif; font-size: 10px; font-weight: 600;
   letter-spacing: 1.2px; text-transform: uppercase;
-  padding: 2px 7px; border-radius: 6px; white-space: nowrap; flex-shrink: 0;
+  display: inline-block; width: 64px; text-align: center; box-sizing: border-box;
+  padding: 2px 0; border-radius: 6px; white-space: nowrap; flex-shrink: 0;
 }
 .ht-Alpha { background: rgba(240,89,91,0.16);  color: var(--alpha); border: 1px solid rgba(240,89,91,0.4); }
 .ht-Beta  { background: rgba(34,184,114,0.16); color: var(--beta);  border: 1px solid rgba(34,184,114,0.4); }
@@ -174,16 +175,12 @@ a { color: inherit; }
   border: 1px solid var(--border-court);
   border-radius: 16px; padding: 30px 28px; margin-bottom: 26px;
 }
-.hero::before {
-  content: ''; position: absolute; top: 14px; bottom: 14px; right: 18px; width: 46%;
-  border: 1px solid var(--line-court); border-radius: 2px;
-  background:
-    linear-gradient(var(--line-court), var(--line-court)) 50% 0 / 1px 100% no-repeat,
-    linear-gradient(90deg, var(--line-court), var(--line-court)) 0 22% / 100% 1px no-repeat,
-    linear-gradient(90deg, var(--line-court), var(--line-court)) 0 78% / 100% 1px no-repeat;
-  pointer-events: none;
+.hero-art {
+  position: absolute; right: 22px; top: 50%; transform: translateY(-50%);
+  width: 200px; height: auto; pointer-events: none;
+  filter: drop-shadow(0 6px 18px rgba(0,0,0,0.35));
 }
-.hero > * { position: relative; }
+.hero-text { position: relative; padding-right: 200px; }
 .hero-label {
   font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: 600;
   letter-spacing: 3px; text-transform: uppercase; color: var(--gold); margin-bottom: 10px;
@@ -218,7 +215,7 @@ a { color: inherit; }
   width: 54px; height: 54px; flex-shrink: 0; border-radius: 12px; background: rgba(0,0,0,0.3);
   display: flex; align-items: center; justify-content: center; font-size: 30px; line-height: 1;
 }
-.sc-medal.blank { font-size: 0; }
+.sc-medal .h-Alpha, .sc-medal .h-Beta, .sc-medal .h-Gamma { font-size: 30px; text-shadow: 0 0 14px currentColor; }
 .sc-text { flex: 1; min-width: 0; }
 .sc-name {
   font-family: 'Oswald', sans-serif; font-size: 22px; font-weight: 600;
@@ -399,8 +396,10 @@ table.ptable { width: 100%; border-collapse: collapse; }
   .nav-inner { padding: 0; gap: 0; }
   .nav-link { flex: 1; text-align: center; padding: 11px 2px; font-size: 13px; letter-spacing: 1px; }
   .hero { padding: 24px 18px; }
-  .hero::before { width: 40%; opacity: 0.7; }
-  .hero-title { font-size: 36px; }
+  .hero-art { width: 112px; right: 8px; }
+  .hero-text { padding-right: 112px; }
+  .hero-label { letter-spacing: 2px; }
+  .hero-title { font-size: 34px; }
   .section-head { font-size: 12px; letter-spacing: 1.6px; padding: 12px 13px; margin: 34px 0 14px; }
   .sc-pts { font-size: 40px; }
   .sched-row { padding: 11px 12px; gap: 10px; }
@@ -409,4 +408,27 @@ table.ptable { width: 100%; border-collapse: collapse; }
   .cat-card-name { font-size: 22px; }
   .roster-head { font-size: 11px; letter-spacing: 1.2px; padding: 9px 3px; }
   .roster-p { font-size: 12.5px; padding: 4px 7px; }
+}
+
+/* ── SCHEDULE PAGE ── */
+.sess { background: var(--surface); border: 1px solid var(--border-court); border-radius: 14px; margin-bottom: 14px; overflow: hidden; }
+.sess.now { border-color: rgba(240,89,91,0.5); }
+.sess.done { border-color: rgba(229,164,0,0.4); }
+.sess-head { display: flex; align-items: baseline; gap: 10px; padding: 12px 14px; background: linear-gradient(135deg, #132E31, #183B3F); }
+.sess-time { font-family: 'Oswald', sans-serif; font-size: 22px; font-weight: 600; }
+.sess-until { font-family: 'Oswald', sans-serif; font-size: 12px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--dim); }
+.sess-head .status-badge { margin-left: auto; align-self: center; }
+.sess-row { display: block; text-decoration: none; padding: 12px 14px; border-top: 1px solid var(--line-court); }
+.sess-row:hover { background: rgba(255,255,255,0.02); }
+.sess-row-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.sess-cat { font-size: 16px; font-weight: 800; flex: 1; }
+.bar { height: 7px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--gold-dark), var(--gold)); }
+.sess-meta { display: flex; justify-content: space-between; gap: 10px; margin-top: 6px; font-size: 12.5px; color: var(--dim); }
+.sess-meta b { color: var(--white); font-weight: 600; }
+.sess-next { color: #FF8A8C; }
+@media (max-width: 380px) {
+  .hero-art { width: 96px; right: 6px; }
+  .hero-text { padding-right: 96px; }
+  .hero-title { font-size: 30px; }
 }

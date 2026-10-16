@@ -86,14 +86,16 @@ var APP = (function () {
     return timer;
   }
 
-  function stamp(res) {
+  // Shows when the last result was entered (from the Sheet), not the clock.
+  function stamp(res, model) {
     var el = document.getElementById('stamp');
     var dot = document.getElementById('live-dot');
     if (!el) return;
-    var t = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
-    if (res.source === 'live') { el.textContent = 'Live · updated ' + t; if (dot) dot.className = 'live-dot'; }
+    var last = model && model.latest && model.latest[0] ? clock(model.latest[0].updatedAt) : '';
+    var lastTxt = last ? 'last result ' + last : 'waiting for the first result';
+    if (res.source === 'live') { el.textContent = 'Live · ' + lastTxt; if (dot) dot.className = 'live-dot'; }
     else if (res.source === 'cache' && res.first) { el.textContent = 'Connecting…'; if (dot) dot.className = 'live-dot off'; }
-    else if (res.source === 'cache') { el.textContent = 'Reconnecting… showing the last results received'; if (dot) dot.className = 'live-dot err'; }
+    else if (res.source === 'cache') { el.textContent = 'Reconnecting… showing results up to ' + (last || 'now'); if (dot) dot.className = 'live-dot err'; }
     else if (!C.API_URL) { el.textContent = 'Draws · live results start soon'; if (dot) dot.className = 'live-dot off'; }
     else { el.textContent = 'Reconnecting…'; if (dot) dot.className = 'live-dot err'; }
   }
@@ -102,7 +104,7 @@ var APP = (function () {
   function mountNav(model) {
     var page = location.pathname.split('/').pop() || 'index.html';
     var cfg = model ? model.config : null;
-    var links = [['index.html', 'Home'], ['draws.html', 'Draws'], ['winners.html', 'Winners']];
+    var links = [['index.html', 'Home'], ['schedule.html', 'Schedule'], ['draws.html', 'Draws'], ['winners.html', 'Winners']];
     var html =
       '<header class="site-header"><div class="header-inner">' +
       '<a class="header-logo" href="index.html">BIS Badminton<span>Interhouse Championship — 2026–27</span></a>' +
@@ -151,11 +153,33 @@ var APP = (function () {
   }
 
   function stateBadge(c) {
-    if (c.state === 'complete') return '<span class="status-badge st-completed">' + (c.kind === 'single' ? 'Single entry' : 'Completed') + '</span>';
+    if (c.state === 'complete') return '<span class="status-badge st-completed">Completed</span>';
     if (c.state === 'progress') return '<span class="status-badge st-progress">● In progress</span>';
     if (c.state === 'postponed') return '<span class="status-badge st-postponed">Postponed</span>';
-    if (c.state === 'single') return '<span class="status-badge st-single">Single entry</span>';
+    if (c.state === 'single') return '';
     return '<span class="status-badge st-upcoming">Upcoming</span>';
+  }
+
+  // One category tile (Home + Winners). withTags: show a house pill on every name.
+  function catTile(c, withTags) {
+    var body;
+    if (c.state === 'complete' && c.podium.length) {
+      body = c.podium.map(function (p) {
+        return '<div class="pod-line"><span class="md">' + medal(p.pos) + '</span><span class="nm">' + pname(p.player) + '</span>' +
+          (withTags || !p.player.house ? houseTag(p.player.house) : '') + '<span class="pt">+' + p.pts + '</span></div>';
+      }).join('');
+      if (c.kind === 'bracket' && c.third && c.third.how === 'double') body += '<div class="res-sub">No 3rd place (both absent)</div>';
+    } else if (c.state === 'progress') {
+      body = '<div class="res-sub">' + c.played + ' of ' + c.total + ' matches played</div>';
+    } else if (c.state === 'postponed') {
+      body = '<div class="res-sub">' + esc(c.note || 'Postponed — new date to be announced') + '</div>';
+    } else if (c.state === 'single') {
+      body = '<div class="res-sub">Single entry: ' + pname(c.players[0]) + '</div>';
+    } else {
+      body = '<div class="res-sub">' + (c.session ? 'Starts ' + esc(c.session) + ' · ' : '') + c.players.length + ' players</div>';
+    }
+    return '<a class="res-item ' + c.state + '" href="draws.html#' + catSlug(c.name) + '">' +
+      '<div class="res-head"><span class="res-cat">' + esc(c.name) + '</span>' + stateBadge(c) + '</div>' + body + '</a>';
   }
 
   function roundRule(rk) {
@@ -178,6 +202,7 @@ var APP = (function () {
     var isLose = m.decided && !isWin && m.how !== 'double' && m.how !== 'empty';
     var cls = m.decided ? (isWin ? 'win' : 'lose') : 'idle';
     if (m.how === 'double' || m.how === 'empty') cls = 'lose';
+    if (m.how === 'joint') { cls = 'idle'; isLose = false; }
     var name;
     if (s.type === 'player') name = pname(s);
     else if (s.type === 'pending') name = '<span class="pend">' + esc(s.label) + '</span>';
@@ -187,6 +212,7 @@ var APP = (function () {
     var tag = '';
     if (isWin && m.how === 'walkover') tag = '<span class="wo-tag">W/O</span>';
     if (isWin && m.how === 'retired') tag = '<span class="wo-tag">RET</span>';
+    if (m.how === 'joint' && s.type === 'player') tag = '<span class="wo-tag">=3RD</span>';
     if (isWin && m.how === 'auto') tag = '<span class="wo-tag">' + (m[sideKey === 'a' ? 'b' : 'a'].why === 'bye' ? 'BYE' : 'W/O') + '</span>';
     return '<div class="prow ' + cls + '">' +
       (isWin ? '<span class="tick">✓</span>' : '') +
@@ -199,6 +225,7 @@ var APP = (function () {
     opts = opts || {};
     var right = '';
     if (m.how === 'double') right = 'Both absent';
+    else if (m.how === 'joint') right = 'Not played · joint 3rd';
     else if (m.how === 'retired') right = 'Retired hurt' + (m.hasStored && m.updatedAt ? ' · ' + clock(m.updatedAt) : '');
     else if (m.how === 'empty') right = 'No players';
     else if (m.decided && m.hasStored && m.updatedAt) right = clock(m.updatedAt);
@@ -227,7 +254,7 @@ var APP = (function () {
   return {
     C: C, esc: esc, load: load, autoRefresh: autoRefresh, stamp: stamp, mountNav: mountNav, analytics: analytics,
     pname: pname, houseTag: houseTag, medal: medal, ordinal: ordinal, hcls: hcls,
-    catSlug: catSlug, catFromSlug: catFromSlug, stateBadge: stateBadge, roundRule: roundRule, clock: clock,
+    catSlug: catSlug, catFromSlug: catFromSlug, stateBadge: stateBadge, catTile: catTile, roundRule: roundRule, clock: clock,
     prow: prow, matchCard: matchCard, warningsHTML: warningsHTML,
     lsGet: lsGet, lsSet: lsSet, lsDel: lsDel, apiUrl: apiUrl
   };

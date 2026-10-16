@@ -16,9 +16,44 @@
   <div id="warnings"></div>
 
   <div class="hero">
-    <div class="hero-label">BIS Interhouse Championship</div>
-    <div class="hero-title">Badminton<br>2026–27</div>
-    <div class="hero-sub" id="hero-sub">Saturday, 17 October 2026 &nbsp;·&nbsp; NSCI, Worli</div>
+    <svg class="hero-art" viewBox="0 0 240 252" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <clipPath id="rk-head"><ellipse cx="0" cy="-88" rx="23.5" ry="32.5"/></clipPath>
+        <radialGradient id="rk-glow" cx="50%" cy="45%" r="55%">
+          <stop offset="0" stop-color="#FFCE5C" stop-opacity="0.22"/>
+          <stop offset="0.6" stop-color="#7EACAF" stop-opacity="0.10"/>
+          <stop offset="1" stop-color="#7EACAF" stop-opacity="0"/>
+        </radialGradient>
+        <g id="rk">
+          <g clip-path="url(#rk-head)" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="1.1">
+            <path d="M-24 -121V-55M-18 -121V-55M-12 -121V-55M-6 -121V-55M0 -121V-55M6 -121V-55M12 -121V-55M18 -121V-55M24 -121V-55"/>
+            <path d="M-24 -118H24M-24 -112H24M-24 -106H24M-24 -100H24M-24 -94H24M-24 -88H24M-24 -82H24M-24 -76H24M-24 -70H24M-24 -64H24M-24 -58H24"/>
+          </g>
+          <ellipse cx="0" cy="-88" rx="27" ry="36" fill="none" stroke="#FFFFFF" stroke-width="5"/>
+          <path d="M-12 -57 Q-2 -48 -1.5 -38 M12 -57 Q2 -48 1.5 -38" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round"/>
+          <rect x="-2" y="-40" width="4" height="90" rx="2" fill="#FFFFFF"/>
+          <rect x="-6" y="48" width="12" height="42" rx="4.5" fill="#FFCE5C"/>
+          <path d="M-6 56 L6 52 M-6 64 L6 60 M-6 72 L6 68 M-6 80 L6 76" stroke="#A87400" stroke-width="1.4"/>
+          <rect x="-6.5" y="88" width="13" height="5" rx="2.5" fill="#FFFFFF"/>
+        </g>
+      </defs>
+      <ellipse cx="120" cy="128" rx="118" ry="120" fill="url(#rk-glow)"/>
+      <use href="#rk" transform="translate(120 154) rotate(-30)"/>
+      <use href="#rk" transform="translate(120 154) rotate(30)"/>
+      <g transform="translate(122 52) rotate(-16) scale(0.92)">
+        <path d="M-9 -4 L-17 -40 Q0 -45 17 -40 L9 -4 Z" fill="#FFFFFF" fill-opacity="0.18" stroke="#FFFFFF" stroke-width="2.4" stroke-linejoin="round"/>
+        <path d="M-5 -4 L-10 -41 M-1.6 -4 L-3.4 -43 M1.6 -4 L3.4 -43 M5 -4 L10 -41" stroke="#FFFFFF" stroke-width="1.3" stroke-opacity="0.85"/>
+        <path d="M-12 -18 Q0 -21 12 -18 M-14.5 -29 Q0 -33 14.5 -29" fill="none" stroke="#FFFFFF" stroke-width="1.3" stroke-opacity="0.8"/>
+        <rect x="-9.5" y="-6" width="19" height="4.5" rx="1.5" fill="#FFCE5C"/>
+        <path d="M-9.5 -1.5 A9.5 9.5 0 0 0 9.5 -1.5 Z" fill="#FFFFFF"/>
+      </g>
+      <path d="M88 30 q-10 -4 -19 0 M90 40 q-9 -3 -16 1" fill="none" stroke="#FFFFFF" stroke-opacity="0.45" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+    <div class="hero-text">
+      <div class="hero-label">BIS Interhouse Championship</div>
+      <div class="hero-title">Badminton<br>2026–27</div>
+      <div class="hero-sub" id="hero-sub">Saturday, 17 October 2026 &nbsp;·&nbsp; NSCI, Worli</div>
+    </div>
   </div>
 
   <div class="refresh-bar"><span class="live-dot off" id="live-dot"></span><span id="stamp">Connecting…</span></div>
@@ -28,9 +63,6 @@
   <div class="section-head first">House Standings</div>
   <div class="scoreboard" id="scoreboard"></div>
   <div class="legend" id="legend"></div>
-
-  <div class="section-head">Schedule <span class="aside">Arrive 20 min before your start time</span></div>
-  <div class="sched" id="schedule"></div>
 
   <div class="section-head">Latest Results <a class="aside" href="draws.html">All draws →</a></div>
   <div class="match-list" id="latest"></div>
@@ -52,82 +84,35 @@ function render(res) {
   var model = BADM.build(res.data);
   var cfg = model.config;
   APP.mountNav(model);
-  APP.stamp(res);
+  APP.stamp(res, model);
   document.getElementById('warnings').innerHTML = APP.warningsHTML(res, model);
   document.getElementById('hero-sub').innerHTML = esc(cfg.date) + (cfg.venue ? ' &nbsp;·&nbsp; ' + esc(cfg.venue) : '');
   document.getElementById('notice').innerHTML = cfg.notice ? '<div class="notice"><b>Notice:</b> ' + esc(cfg.notice) + '</div>' : '';
 
-  // House standings
+  // House standings — medal once points exist, otherwise a star in the house colour
   document.getElementById('scoreboard').innerHTML = model.standings.map(function (s) {
-    var medal = model.anyPoints ? APP.medal(s.pos) : '';
+    var badge = model.anyPoints ? APP.medal(s.pos) : '<span class="h-' + s.house + '">★</span>';
     var meta = [];
     if (s.gold || s.silver || s.bronze) meta.push('🥇 ' + s.gold + ' &nbsp; 🥈 ' + s.silver + ' &nbsp; 🥉 ' + s.bronze);
     if (model.anyPoints && s.tied) meta.push('Tied');
     return '<div class="score-card sc-' + s.house + (model.anyPoints && s.pos === 1 ? ' leader' : '') + '">' +
-      '<div class="sc-medal' + (medal ? '' : ' blank') + '">' + medal + '</div>' +
+      '<div class="sc-medal">' + badge + '</div>' +
       '<div class="sc-text"><div class="sc-name h-' + s.house + '">' + s.house + '</div>' +
       (meta.length ? '<div class="sc-meta">' + meta.join(' · ') + '</div>' : '') + '</div>' +
       '<div class="sc-pts h-' + s.house + '">' + s.pts + '</div></div>';
   }).join('');
-  var singles = model.categories.filter(function (c) { return c.kind === 'single' && c.state === 'complete'; }).length;
   document.getElementById('legend').innerHTML =
     'Category points: 1st = <b>' + cfg.points[0] + '</b> · 2nd = <b>' + cfg.points[1] + '</b> · 3rd = <b>' + cfg.points[2] + '</b><br>' +
-    '<b>' + model.completed + '</b> of ' + model.countable + ' categories complete' +
-    (singles ? ' (incl. ' + singles + ' single entr' + (singles === 1 ? 'y' : 'ies') + ')' : '');
-
-  // Schedule — sessions in the order of the Categories tab
-  var sessions = [], bySession = {};
-  model.categories.forEach(function (c) {
-    if (!c.session || c.postponed || c.kind === 'single') return;
-    if (!bySession[c.session]) { bySession[c.session] = { time: c.session, until: c.dispersal, cats: [] }; sessions.push(bySession[c.session]); }
-    bySession[c.session].cats.push(c);
-  });
-  var rows = sessions.map(function (s) {
-    return '<div class="sched-row"><div class="sched-time"><b>' + esc(s.time) + '</b>' +
-      (s.until ? '<span>till ~' + esc(s.until) + '</span>' : '') + '</div>' +
-      '<div class="sched-cats">' + s.cats.map(chip).join('') + '</div></div>';
-  });
-  var post = model.categories.filter(function (c) { return c.postponed; });
-  if (post.length) rows.push('<div class="sched-row"><div class="sched-time"><b>TBA</b><span>new date</span></div><div class="sched-cats">' + post.map(chip).join('') + '</div></div>');
-  var sing = model.categories.filter(function (c) { return c.kind === 'single' && !c.postponed; });
-  if (sing.length) rows.push('<div class="sched-row"><div class="sched-time"><b>—</b><span>no matches</span></div><div class="sched-cats">' + sing.map(chip).join('') + '</div></div>');
-  document.getElementById('schedule').innerHTML = rows.join('') || '<div class="empty">Schedule coming soon.</div>';
+    '<b>' + model.completed + '</b> of ' + model.countable + ' categories complete';
 
   // Latest results
-  var latest = model.latest.slice(0, 6);
+  var latest = model.latest.slice(0, 3);
   document.getElementById('latest').innerHTML = latest.length
     ? latest.map(function (m) { return APP.matchCard(m, { showCat: true }); }).join('')
     : '<div class="empty">No results yet — first matches start at 10:00 AM.</div>';
 
-  // Category results grid (schedule order)
-  document.getElementById('cat-results').innerHTML = model.categories.map(function (c) {
-    var body;
-    if (c.podium.length && c.state === 'complete') {
-      body = c.podium.map(function (p) {
-        return '<div class="pod-line"><span class="md">' + APP.medal(p.pos) + '</span><span class="nm">' + APP.pname(p.player) + '</span>' +
-          (p.player.house ? '' : APP.houseTag('')) + '<span class="pt">+' + p.pts + '</span></div>';
-      }).join('');
-      if (c.kind === 'single') body += '<div class="res-sub">Single entry — winner by walkover</div>';
-    } else if (c.state === 'progress') {
-      body = '<div class="res-sub">' + c.played + ' of ' + c.total + ' matches played</div>';
-    } else if (c.state === 'postponed') {
-      body = '<div class="res-sub">' + esc(c.note || 'Postponed — new date to be announced') + '</div>';
-    } else if (c.state === 'single') {
-      body = '<div class="res-sub">Single entry: ' + APP.pname(c.players[0]) + '</div>';
-    } else {
-      body = '<div class="res-sub">' + (c.session ? 'Starts ' + esc(c.session) : 'Upcoming') + ' · ' + c.players.length + ' players</div>';
-    }
-    return '<a class="res-item ' + c.state + '" href="draws.html#' + APP.catSlug(c.name) + '">' +
-      '<div class="res-head"><span class="res-cat">' + esc(c.name) + '</span>' + APP.stateBadge(c) + '</div>' + body + '</a>';
-  }).join('');
-}
-
-function chip(c) {
-  var badge = c.state === 'progress' ? '<span class="status-badge st-progress">' + c.played + '/' + c.total + '</span>'
-            : c.state === 'complete' ? '<span class="status-badge st-completed">' + (c.kind === 'single' ? 'W/O' : 'Done') + '</span>'
-            : c.state === 'postponed' ? '<span class="status-badge st-postponed">Postponed</span>'
-            : '';
-  return '<a class="cat-chip" href="draws.html#' + APP.catSlug(c.name) + '">' + esc(c.name) + badge + '</a>';
+  // Category results (schedule order)
+  document.getElementById('cat-results').innerHTML = model.categories.map(function (c) { return APP.catTile(c, false); }).join('');
 }
 
 APP.autoRefresh(render);

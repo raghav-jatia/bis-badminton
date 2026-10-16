@@ -40,7 +40,7 @@ function render(res) {
   var model = BADM.build(res.data);
   var cfg = model.config;
   APP.mountNav(model);
-  APP.stamp(res);
+  APP.stamp(res, model);
   document.getElementById('warnings').innerHTML = APP.warningsHTML(res, model);
 
   document.getElementById('filters').innerHTML = [['all', 'All'], ['Boys', 'Boys'], ['Girls', 'Girls']].map(function (f) {
@@ -48,27 +48,8 @@ function render(res) {
   }).join('');
 
   var cats = model.byAge.filter(function (c) { return filter === 'all' || new RegExp(filter, 'i').test(c.name); });
-  document.getElementById('winners').innerHTML = cats.map(function (c) {
-    var body = '';
-    if (c.state === 'complete' && c.podium.length) {
-      body = c.podium.map(function (p) {
-        return '<div class="pod-line"><span class="md">' + APP.medal(p.pos) + '</span><span class="nm">' + APP.pname(p.player) + '</span>' +
-          APP.houseTag(p.player.house) + '<span class="pt">+' + p.pts + '</span></div>';
-      }).join('');
-      if (c.kind === 'single') body += '<div class="res-sub">Single entry — 1st place by walkover</div>';
-      else if (!c.podium.some(function (p) { return p.pos === 3; }) && c.third) body += '<div class="res-sub">No 3rd place (no-show)</div>';
-    } else if (c.state === 'progress') {
-      body = '<div class="res-sub">In progress — ' + c.played + ' of ' + c.total + ' matches played</div>';
-    } else if (c.state === 'postponed') {
-      body = '<div class="res-sub">' + esc(c.note || 'Postponed') + '</div>';
-    } else if (c.state === 'single') {
-      body = '<div class="res-sub">Single entry: ' + APP.pname(c.players[0]) + ' (no points)</div>';
-    } else {
-      body = '<div class="res-sub">Upcoming' + (c.session ? ' · starts ' + esc(c.session) : '') + '</div>';
-    }
-    return '<a class="res-item ' + c.state + '" href="draws.html#' + APP.catSlug(c.name) + '">' +
-      '<div class="res-head"><span class="res-cat">' + esc(c.name) + '</span>' + APP.stateBadge(c) + '</div>' + body + '</a>';
-  }).join('') || '<div class="empty">Nothing here yet.</div>';
+  document.getElementById('winners').innerHTML = cats.map(function (c) { return APP.catTile(c, true); }).join('') ||
+    '<div class="empty">Nothing here yet.</div>';
 
   // Points table — only completed categories count
   var H = BADM.HOUSES;

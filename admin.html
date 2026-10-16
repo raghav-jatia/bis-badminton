@@ -186,7 +186,7 @@ function draw() {
 
   var h = '';
   h += '<div class="adm-bar"><div class="refresh-bar"><span class="live-dot ' + (SOURCE === 'live' ? '' : 'err') + '"></span><span>' +
-    (SOURCE === 'live' ? 'Connected · ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Not connected — showing last copy') +
+    (SOURCE === 'live' ? 'Connected' + (MODEL.latest[0] ? ' · last saved ' + APP.clock(MODEL.latest[0].updatedAt) : '') : 'Not connected — showing last copy') +
     '</span></div><button class="btn sm ghost" id="reload">↻ Refresh</button><a class="btn sm ghost" href="index.html" style="text-decoration:none">Site</a></div>';
 
   // Sheet problems (houses summarised)
@@ -272,7 +272,11 @@ function readyCard(m) {
   });
   if (ed && ed.winner) h += editor(m, ed);
   else if (ed && ed.outcome === 'double') h += doubleEditor(m);
-  else h += '<button class="linkish" data-double="' + esc(m.id) + '">Neither player turned up</button>';
+  else if (ed && ed.outcome === 'joint') h += jointEditor(m);
+  else {
+    h += '<button class="linkish" data-double="' + esc(m.id) + '">Neither player turned up</button>';
+    if (m.rk === '3p') h += '<br><button class="linkish" style="margin-top:2px" data-joint="' + esc(m.id) + '">Not played — both get joint 3rd</button>';
+  }
   return h + '</div>';
 }
 
@@ -290,6 +294,13 @@ function editor(m, ed) {
       : '<div class="hint">' + esc(loser.name) + ' did not turn up / could not play. ' + esc(ed.winner) + ' goes through.</div>') +
     '<div class="err" id="edit-err"></div>' +
     '<button class="btn gold block" id="save">Save · ' + esc(ed.winner) + ' wins</button>' +
+    '<div class="row-btns"><button class="btn ghost" id="cancel">Cancel</button></div></div>';
+}
+
+function jointEditor(m) {
+  return '<div class="editor"><div class="hint">The 3rd place match is not being played. <b style="color:var(--white)">Both</b> players get 3rd place and its points.</div>' +
+    '<div class="err" id="edit-err"></div>' +
+    '<button class="btn gold block" id="save">Save · joint 3rd place</button>' +
     '<div class="row-btns"><button class="btn ghost" id="cancel">Cancel</button></div></div>';
 }
 
@@ -332,6 +343,9 @@ function wire() {
       draw(); scrollToCard(id);
     };
   });
+  app.querySelectorAll('[data-joint]').forEach(function (b) {
+    b.onclick = function () { EDIT = { id: b.getAttribute('data-joint'), winner: '', outcome: 'joint', w: '', l: '' }; draw(); scrollToCard(EDIT.id); };
+  });
   app.querySelectorAll('[data-double]').forEach(function (b) {
     b.onclick = function () { EDIT = { id: b.getAttribute('data-double'), winner: '', outcome: 'double', w: '', l: '' }; draw(); scrollToCard(EDIT.id); };
   });
@@ -368,7 +382,7 @@ function rowOf(id) {
 
 // Later matches whose saved results would be wiped by this change.
 function affected(m, newWinnerKey, newDouble) {
-  var cur = m.decided ? (m.how === 'double' || m.how === 'empty' ? 'none' : m.winner.key) : 'undecided';
+  var cur = m.decided ? (m.how === 'double' || m.how === 'empty' || m.how === 'joint' ? 'none' : m.winner.key) : 'undecided';
   var next = newDouble ? 'none' : newWinnerKey;
   if (cur === next) return [];
   return BADM.dependents(MODEL, m.id).filter(function (d) { return d.hasStored; });
@@ -376,6 +390,7 @@ function affected(m, newWinnerKey, newDouble) {
 
 function describe(d) {
   if (d.how === 'double') return d.label + ' (both absent)';
+  if (d.how === 'joint') return d.label + ' (joint 3rd)';
   return d.label + ' (' + (d.winner && d.winner.name ? d.winner.name + ' won' : 'result') + ')';
 }
 
@@ -385,14 +400,15 @@ function doSave() {
   var m = MODEL.matchById[EDIT.id];
   var errEl = document.getElementById('edit-err');
   var body = { action: 'setResult', matchId: m.id, outcome: EDIT.outcome, expect: BADM.storedSig(rowOf(m.id)) };
-  if (EDIT.outcome !== 'double') body.winner = EDIT.winner;
+  var noWinner = EDIT.outcome === 'double' || EDIT.outcome === 'joint';
+  if (!noWinner) body.winner = EDIT.winner;
   if (EDIT.outcome === 'played' || EDIT.outcome === 'retired') {
     var chk = BADM.checkScore(m.rk, EDIT.w, EDIT.l, EDIT.outcome === 'retired');
     if (!chk.ok) { errEl.textContent = chk.error; return; }
     if (chk.warn && !confirm(chk.warn + '\n\nSave anyway?')) return;
     if (!chk.empty) { body.wPts = Number(EDIT.w); body.lPts = Number(EDIT.l); }
   }
-  var deps = affected(m, EDIT.outcome === 'double' ? null : BADM.key(EDIT.winner), EDIT.outcome === 'double');
+  var deps = affected(m, noWinner ? null : BADM.key(EDIT.winner), noWinner);
   if (deps.length && !confirm('This changes who goes through, so these later results will be cleared and need re-entering:\n\n• ' +
       deps.map(describe).join('\n• ') + '\n\nContinue?')) return;
   send(body);
@@ -400,7 +416,7 @@ function doSave() {
 
 function changeResult(id) {
   var m = MODEL.matchById[id];
-  if (m.how === 'double') EDIT = { id: id, winner: '', outcome: 'double', w: '', l: '' };
+  if (m.how === 'double' || m.how === 'joint') EDIT = { id: id, winner: '', outcome: m.how, w: '', l: '' };
   else EDIT = { id: id, winner: m.winner.name, outcome: m.how === 'walkover' ? 'walkover' : m.how === 'retired' ? 'retired' : 'played', w: m.wPts === null ? '' : String(m.wPts), l: m.lPts === null ? '' : String(m.lPts) };
   draw();
   scrollToCard(id);
@@ -409,7 +425,7 @@ function changeResult(id) {
 function undo(id) {
   var m = MODEL.matchById[id];
   var deps = BADM.dependents(MODEL, id).filter(function (d) { return d.hasStored; });
-  var msg = 'Undo ' + m.category + ' ' + m.label + ' (' + (m.how === 'double' ? 'both absent' : m.winner.name + ' won') + ')?';
+  var msg = 'Undo ' + m.category + ' ' + m.label + ' (' + (m.how === 'double' ? 'both absent' : m.how === 'joint' ? 'joint 3rd' : m.winner.name + ' won') + ')?';
   if (deps.length) msg += '\n\nThese later results depend on it and will also be cleared:\n• ' + deps.map(describe).join('\n• ');
   if (!confirm(msg)) return;
   send({ action: 'clearResult', matchId: id, expect: BADM.storedSig(rowOf(id)) });

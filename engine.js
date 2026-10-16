@@ -56,6 +56,7 @@ var BADM = (function () {
   function outcomeKey(o) {
     var k = key(o);
     if (!k) return '';
+    if (/joint|shared/.test(k)) return 'joint';
     if (/double|both|neither/.test(k)) return 'double';
     if (/retir|^ret\.?$|^rtd$/.test(k)) return 'retired';
     if (/walk|^w\s*\/?\s*o$/.test(k)) return 'walkover';
@@ -205,7 +206,7 @@ var BADM = (function () {
         seq: idx
       };
       m.hasStored = !!(m.stored.winner || m.stored.outcome);
-      if (m.stored.outcome === 'unknown') issue('error', c.name, m.label + ': outcome "' + m.stored.outcomeRaw + '" not recognised (use blank, WALKOVER, RETIRED or DOUBLE WALKOVER).');
+      if (m.stored.outcome === 'unknown') issue('error', c.name, m.label + ': outcome "' + m.stored.outcomeRaw + '" not recognised (use blank, WALKOVER, RETIRED, DOUBLE WALKOVER or JOINT 3RD).');
       c.matches.push(m);
       matchById[id] = m;
     });
@@ -260,6 +261,14 @@ var BADM = (function () {
         if (m.hasStored && !sidesKnown) {
           m.problem = 'Has a saved result but its players are not decided yet.';
           issue('error', c.name, m.label + ': ' + m.problem + ' Clear it, or enter the earlier result first.');
+        } else if (st.outcome === 'joint' && m.rk !== '3p') {
+          m.problem = 'JOINT 3RD can only be used on the 3rd Place match.';
+          issue('error', c.name, m.label + ': ' + m.problem);
+        } else if (st.outcome === 'joint') {
+          // 3rd place match not played: both semi-final losers share 3rd.
+          m.decided = true; m.how = 'joint';
+          m.winner = { type: 'none', why: 'noplayer', label: 'No player' };
+          m.loser = { type: 'none', why: 'noplayer', label: 'No player' };
         } else if (st.outcome === 'double') {
           m.decided = true; m.how = 'double';
           m.winner = { type: 'none', why: 'noplayer', label: 'No player' };
@@ -342,7 +351,9 @@ var BADM = (function () {
         if (complete) {
           if (fin.winner && fin.winner.type === 'player') c.podium.push({ pos: 1, player: fin.winner, pts: pts[0], how: fin.how });
           if (fin.loser && fin.loser.type === 'player') c.podium.push({ pos: 2, player: fin.loser, pts: pts[1], how: fin.how });
-          if (third && third.winner && third.winner.type === 'player') c.podium.push({ pos: 3, player: third.winner, pts: pts[2], how: third.how });
+          if (third && third.how === 'joint') {
+            [third.a, third.b].forEach(function (s) { if (s && s.type === 'player') c.podium.push({ pos: 3, player: s, pts: pts[2], how: 'joint' }); });
+          } else if (third && third.winner && third.winner.type === 'player') c.podium.push({ pos: 3, player: third.winner, pts: pts[2], how: third.how });
         }
         var anyStored = c.matches.some(function (m) { return m.hasStored; });
         c.state = c.postponed ? 'postponed' : complete ? 'complete' : anyStored ? 'progress' : 'upcoming';
