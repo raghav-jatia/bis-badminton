@@ -186,6 +186,7 @@ var APP = (function () {
     if (m.wPts !== null && m.wPts !== undefined && m.decided) sc = isWin ? m.wPts : (isLose ? m.lPts : '');
     var tag = '';
     if (isWin && m.how === 'walkover') tag = '<span class="wo-tag">W/O</span>';
+    if (isWin && m.how === 'retired') tag = '<span class="wo-tag">RET</span>';
     if (isWin && m.how === 'auto') tag = '<span class="wo-tag">' + (m[sideKey === 'a' ? 'b' : 'a'].why === 'bye' ? 'BYE' : 'W/O') + '</span>';
     return '<div class="prow ' + cls + '">' +
       (isWin ? '<span class="tick">✓</span>' : '') +
@@ -198,6 +199,7 @@ var APP = (function () {
     opts = opts || {};
     var right = '';
     if (m.how === 'double') right = 'Both absent';
+    else if (m.how === 'retired') right = 'Retired hurt' + (m.hasStored && m.updatedAt ? ' · ' + clock(m.updatedAt) : '');
     else if (m.how === 'empty') right = 'No players';
     else if (m.decided && m.hasStored && m.updatedAt) right = clock(m.updatedAt);
     else if (!m.decided && m.status === 'ready') right = 'Up next';
@@ -214,17 +216,6 @@ var APP = (function () {
     if (C.API_URL && res.source !== 'live' && !res.first) {
       out.push('<div class="data-warning"><strong>Live results are reconnecting.</strong> ' +
         (res.source === 'cache' ? 'Showing the last results received.' : 'Showing the draws only.') + ' This page retries on its own.</div>');
-    }
-    var pending = [];
-    if (res.source !== 'built-in') {
-      model.categories.forEach(function (c) {
-        if (c.state !== 'complete') return;
-        c.podium.forEach(function (p) { if (p.noHouse) pending.push(p.player.name + ' (' + c.name + ', ' + ordinal(p.pos) + ')'); });
-      });
-    }
-    if (pending.length) {
-      out.push('<div class="notice"><b>Points pending:</b> house not recorded yet for ' + esc(pending.join(', ')) +
-        '. These points will be added once confirmed.</div>');
     }
     if (/[?&]debug/.test(location.search)) {
       out.push('<div class="data-warning"><strong>Debug (' + model.issues.length + '):</strong><br>' +

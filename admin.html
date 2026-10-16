@@ -196,6 +196,16 @@ function draw() {
     h += '<details class="issues" open><summary>⚠️ ' + errs.length + ' problem' + (errs.length > 1 ? 's' : '') + ' in the Sheet</summary>' +
       errs.map(function (i) { return '<div>• ' + esc((i.category ? i.category + ': ' : '') + i.msg) + '</div>'; }).join('') + '</details>';
   }
+  var pend = [];
+  MODEL.categories.forEach(function (c) {
+    if (c.state !== 'complete') return;
+    c.podium.forEach(function (p) { if (p.noHouse) pend.push(c.name + ': ' + p.player.name + ' (' + APP.ordinal(p.pos) + ', ' + p.pts + ' pts)'); });
+  });
+  if (pend.length) {
+    h += '<details class="issues" open><summary>⏳ Points not counted yet — house missing (' + pend.length + ')</summary>' +
+      pend.map(function (t) { return '<div>• ' + esc(t) + '</div>'; }).join('') +
+      '<div style="color:var(--dim)">Add their house on the Players tab and these points go onto the site straight away.</div></details>';
+  }
   if (noHouse.length) {
     h += '<details class="issues info"><summary>🏠 ' + noHouse.length + ' player' + (noHouse.length > 1 ? 's' : '') + ' still need a house in the Sheet</summary>' +
       noHouse.map(function (i) { return '<div>• ' + esc(i.category + ': ' + i.msg.replace(' has no house yet.', '')) + '</div>'; }).join('') +
@@ -270,11 +280,13 @@ function editor(m, ed) {
   var loser = BADM.key(m.a.name) === BADM.key(ed.winner) ? m.b : m.a;
   return '<div class="editor">' +
     '<div class="seg"><button class="btn sm' + (ed.outcome === 'played' ? ' on' : '') + '" data-outcome="played">Played</button>' +
-    '<button class="btn sm' + (ed.outcome === 'walkover' ? ' on' : '') + '" data-outcome="walkover">Walkover</button></div>' +
-    (ed.outcome === 'played'
+    '<button class="btn sm' + (ed.outcome === 'walkover' ? ' on' : '') + '" data-outcome="walkover">Walkover</button>' +
+    '<button class="btn sm' + (ed.outcome === 'retired' ? ' on' : '') + '" data-outcome="retired">Retired</button></div>' +
+    (ed.outcome === 'retired' ? '<div class="hint" style="color:var(--white)">' + esc(loser.name) + ' retired hurt during the match. ' + esc(ed.winner) + ' goes through.</div>' : '') +
+    (ed.outcome === 'played' || ed.outcome === 'retired'
       ? '<div class="score-row"><div class="f"><label>' + esc(firstName(ed.winner)) + ' (winner)</label><input id="sw" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="30" placeholder="—" value="' + esc(ed.w) + '"></div>' +
         '<div class="dash">–</div><div class="f"><label>' + esc(firstName(loser.name)) + '</label><input id="sl" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="30" placeholder="—" value="' + esc(ed.l) + '"></div></div>' +
-        '<div class="hint">Score is optional — leave blank if you don\'t have it.</div>'
+        '<div class="hint">' + (ed.outcome === 'retired' ? 'Score when they stopped (optional).' : 'Score is optional — leave blank if you don\'t have it.') + '</div>'
       : '<div class="hint">' + esc(loser.name) + ' did not turn up / could not play. ' + esc(ed.winner) + ' goes through.</div>') +
     '<div class="err" id="edit-err"></div>' +
     '<button class="btn gold block" id="save">Save · ' + esc(ed.winner) + ' wins</button>' +
@@ -374,8 +386,8 @@ function doSave() {
   var errEl = document.getElementById('edit-err');
   var body = { action: 'setResult', matchId: m.id, outcome: EDIT.outcome, expect: BADM.storedSig(rowOf(m.id)) };
   if (EDIT.outcome !== 'double') body.winner = EDIT.winner;
-  if (EDIT.outcome === 'played') {
-    var chk = BADM.checkScore(m.rk, EDIT.w, EDIT.l);
+  if (EDIT.outcome === 'played' || EDIT.outcome === 'retired') {
+    var chk = BADM.checkScore(m.rk, EDIT.w, EDIT.l, EDIT.outcome === 'retired');
     if (!chk.ok) { errEl.textContent = chk.error; return; }
     if (chk.warn && !confirm(chk.warn + '\n\nSave anyway?')) return;
     if (!chk.empty) { body.wPts = Number(EDIT.w); body.lPts = Number(EDIT.l); }
@@ -389,7 +401,7 @@ function doSave() {
 function changeResult(id) {
   var m = MODEL.matchById[id];
   if (m.how === 'double') EDIT = { id: id, winner: '', outcome: 'double', w: '', l: '' };
-  else EDIT = { id: id, winner: m.winner.name, outcome: m.how === 'walkover' ? 'walkover' : 'played', w: m.wPts === null ? '' : String(m.wPts), l: m.lPts === null ? '' : String(m.lPts) };
+  else EDIT = { id: id, winner: m.winner.name, outcome: m.how === 'walkover' ? 'walkover' : m.how === 'retired' ? 'retired' : 'played', w: m.wPts === null ? '' : String(m.wPts), l: m.lPts === null ? '' : String(m.lPts) };
   draw();
   scrollToCard(id);
 }

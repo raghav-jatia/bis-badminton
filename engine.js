@@ -57,6 +57,7 @@ var BADM = (function () {
     var k = key(o);
     if (!k) return '';
     if (/double|both|neither/.test(k)) return 'double';
+    if (/retir|^ret\.?$|^rtd$/.test(k)) return 'retired';
     if (/walk|^w\s*\/?\s*o$/.test(k)) return 'walkover';
     return 'unknown';
   }
@@ -91,7 +92,9 @@ var BADM = (function () {
   // Final:   1 game to 15, setting to 17 at 14-14.
   // 3rd place: not specified — accept either the 11 or the 15 format.
   // Returns { ok:false, error } for impossible input, or { ok:true, warn? }.
-  function checkScore(rk, w, l) {
+  // retired = true: the score when a player retired hurt. Any order is fine
+  // (the player who retired may have been ahead), no format check.
+  function checkScore(rk, w, l, retired) {
     var hasW = w !== null && w !== undefined && w !== '';
     var hasL = l !== null && l !== undefined && l !== '';
     if (!hasW && !hasL) return { ok: true, empty: true };
@@ -100,6 +103,7 @@ var BADM = (function () {
     if (!isFinite(w) || !isFinite(l) || w % 1 !== 0 || l % 1 !== 0 || w < 0 || l < 0 || w > 30 || l > 30) {
       return { ok: false, error: 'Scores must be whole numbers between 0 and 30.' };
     }
+    if (retired) return { ok: true };
     if (w <= l) return { ok: false, error: "The winner's score must be higher than the loser's." };
     var to11 = (w === 11 && l <= 10);
     var to15 = (w === 15 && l <= 14);
@@ -201,7 +205,7 @@ var BADM = (function () {
         seq: idx
       };
       m.hasStored = !!(m.stored.winner || m.stored.outcome);
-      if (m.stored.outcome === 'unknown') issue('error', c.name, m.label + ': outcome "' + m.stored.outcomeRaw + '" not recognised (use blank, WALKOVER or DOUBLE WALKOVER).');
+      if (m.stored.outcome === 'unknown') issue('error', c.name, m.label + ': outcome "' + m.stored.outcomeRaw + '" not recognised (use blank, WALKOVER, RETIRED or DOUBLE WALKOVER).');
       c.matches.push(m);
       matchById[id] = m;
     });
@@ -269,13 +273,13 @@ var BADM = (function () {
           } else {
             m.decided = true; m.winSide = side_;
             m.winner = side_ === 'a' ? a : b; m.loser = side_ === 'a' ? b : a;
-            m.how = (st.outcome === 'walkover') ? 'walkover' : (m.loser.type === 'none' ? 'auto' : 'played');
-            if (m.how === 'played' && st.wPts !== null && st.lPts !== null && !isNaN(st.wPts) && !isNaN(st.lPts)) {
+            m.how = (st.outcome === 'walkover') ? 'walkover' : (st.outcome === 'retired') ? 'retired' : (m.loser.type === 'none' ? 'auto' : 'played');
+            if ((m.how === 'played' || m.how === 'retired') && st.wPts !== null && st.lPts !== null && !isNaN(st.wPts) && !isNaN(st.lPts)) {
               m.wPts = st.wPts; m.lPts = st.lPts;
             }
           }
-        } else if (st.outcome === 'walkover') {
-          m.problem = 'Marked WALKOVER but no winner is filled in.';
+        } else if (st.outcome === 'walkover' || st.outcome === 'retired') {
+          m.problem = 'Marked ' + st.outcome.toUpperCase() + ' but no winner is filled in.';
           issue('error', c.name, m.label + ': ' + m.problem);
         }
 
