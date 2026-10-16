@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BIS Interhouse Badminton 2026–27 — Draws</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏸</text></svg>">
+<link rel="stylesheet" href="styles.css">
+<script src="config.js"></script>
+</head>
+<body>
+<div id="nav-placeholder"></div>
+<div class="page-wrap">
+
+  <div id="warnings"></div>
+  <div class="page-title">Draws</div>
+  <div class="refresh-bar"><span class="live-dot off" id="live-dot"></span><span id="stamp">Connecting…</span></div>
+
+  <div class="filter-bar" id="filters"></div>
+  <div id="cat"></div>
+
+</div>
+
+<script src="seed.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+<script>
+APP.analytics();
+APP.mountNav(null);
+var esc = APP.esc;
+var MODEL = null, LAST = null, current = null;
+
+function pickDefault(model) {
+  var fromHash = APP.catFromSlug(model, location.hash.slice(1));
+  if (fromHash && fromHash.state !== 'empty') return fromHash.name;
+  var live = model.categories.filter(function (c) { return c.state === 'progress'; })[0];
+  if (live) return live.name;
+  var next = model.categories.filter(function (c) { return c.state === 'upcoming' && c.kind === 'bracket'; })[0];
+  return (next || model.byAge[0]).name;
+}
+
+function render(res) {
+  if (res) LAST = res;
+  res = LAST;
+  MODEL = BADM.build(res.data);
+  APP.mountNav(MODEL);
+  APP.stamp(res);
+  document.getElementById('warnings').innerHTML = APP.warningsHTML(res, MODEL);
+  if (!current || !MODEL.byName[current.toLowerCase()]) current = pickDefault(MODEL);
+
+  document.getElementById('filters').innerHTML = MODEL.byAge.map(function (c) {
+    var dot = c.state === 'progress' ? '<span class="dot dot-progress"></span>' : c.state === 'complete' ? '<span class="dot dot-complete"></span>' : '';
+    return '<button class="filter-btn' + (c.name === current ? ' active' : '') + '" data-c="' + esc(c.name) + '">' + dot + esc(c.name) + '</button>';
+  }).join('');
+
+  var c = MODEL.byName[current.toLowerCase()];
+  var html = '';
+  var info = [];
+  if (c.session) info.push('Starts ' + c.session + (c.dispersal ? ' · finish ~' + c.dispersal : ''));
+  if (c.kind === 'bracket') info.push(c.players.length + ' players · ' + c.played + ' of ' + c.total + ' matches played');
+  html += '<div class="cat-card"><div class="cat-card-top"><span class="cat-card-name">' + esc(c.name) + '</span>' + APP.stateBadge(c) + '</div>' +
+    (info.length ? '<div class="cat-card-info">' + esc(info.join(' · ')) + '</div>' : '') +
+    (c.note && c.kind !== 'single' ? '<div class="cat-card-info">' + esc(c.note) + '</div>' : '') + '</div>';
+
+  if (c.podium.length && c.state === 'complete') {
+    html += '<div class="podium">' + c.podium.map(function (p) {
+      return '<div class="pod p' + p.pos + '"><span class="md">' + APP.medal(p.pos) + '</span>' +
+        '<span class="who"><span class="nm">' + APP.pname(p.player) + '</span><span class="sub">' +
+        (p.player.house ? esc(p.player.house) : 'House not set') + ' · ' + APP.ordinal(p.pos) + '</span></span>' +
+        '<span class="pt">+' + p.pts + '</span></div>';
+    }).join('') + '</div>';
+  }
+
+  if (c.kind === 'single') {
+    var p = c.players[0];
+    html += '<div class="mcard done"><div class="mcard-meta"><span>Single entry</span></div>' +
+      '<div class="prow ' + (c.state === 'complete' ? 'win' : 'idle') + '">' + (c.state === 'complete' ? '<span class="tick">✓</span>' : '') +
+      '<span class="nm">' + APP.pname(p) + '</span><span class="wo-tag">W/O</span></div>' +
+      '<div class="mcard-foot">' + (c.state === 'complete' ? 'Only entry in this category — awarded 1st place by walkover.' : 'Only entry in this category — no points awarded.') + '</div></div>';
+  } else {
+    var rounds = [], byRound = {};
+    c.matches.forEach(function (m) {
+      var k = m.rk === '3p' ? 'f' : m.rk;  // show 3rd place with the final
+      if (!byRound[k]) { byRound[k] = { rk: k, items: [] }; rounds.push(byRound[k]); }
+      byRound[k].items.push(m);
+    });
+    html += '<div class="bracket">' + rounds.map(function (r) {
+      var title = r.rk === 'f' ? 'Final & 3rd Place' : (r.items[0].round || BADM.ROUND_LABEL[r.rk]);
+      var rule = r.rk === 'f' ? 'Final to 15 · setting to 17' : APP.roundRule(r.rk);
+      return '<div class="round-col"><div class="round-head">' + esc(title) + (rule ? ' <span>' + esc(rule) + '</span>' : '') + '</div>' +
+        '<div class="match-list">' + r.items.map(function (m) { return APP.matchCard(m); }).join('') + '</div></div>';
+    }).join('') + '</div>';
+  }
+
+  // Players by house
+  var houses = ['Alpha', 'Beta', 'Gamma'];
+  var noHouse = c.players.filter(function (p) { return !p.house; });
+  var cols = houses.concat(noHouse.length ? [''] : []);
+  html += '<div class="section-head">Players <span class="aside">' + c.players.length + '</span></div>' +
+    '<div class="roster' + (cols.length === 4 ? ' four' : '') + '">' + cols.map(function (h) {
+      var list = c.players.filter(function (p) { return (p.house || '') === h; });
+      return '<div class="roster-col"><div class="roster-head rh-' + (h || 'none') + '">' + (h || 'House TBC') + '</div>' +
+        (list.length ? list.map(function (p) { return '<div class="roster-p ' + APP.hcls(p.house) + '">' + esc(p.name) + '</div>'; }).join('')
+                     : '<div class="roster-empty">—</div>') + '</div>';
+    }).join('') + '</div>';
+
+  document.getElementById('cat').innerHTML = html;
+}
+
+document.getElementById('filters').addEventListener('click', function (e) {
+  var b = e.target.closest('.filter-btn');
+  if (!b) return;
+  current = b.getAttribute('data-c');
+  history.replaceState(null, '', '#' + APP.catSlug(current));
+  render();
+});
+window.addEventListener('hashchange', function () {
+  if (!MODEL) return;
+  var c = APP.catFromSlug(MODEL, location.hash.slice(1));
+  if (c) { current = c.name; render(); }
+});
+
+APP.autoRefresh(render);
+</script>
+</body>
+</html>

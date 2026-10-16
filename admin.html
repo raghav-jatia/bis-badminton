@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Badminton — Enter Results</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏸</text></svg>">
+<link rel="stylesheet" href="styles.css">
+<script src="config.js"></script>
+<style>
+  .page-wrap { max-width: 640px; padding-top: 16px; padding-bottom: 120px; }
+  .adm-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .adm-bar .refresh-bar { margin: 0; flex: 1; min-width: 0; }
+  .btn {
+    font-family: 'Oswald', sans-serif; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase;
+    border-radius: 12px; border: 1px solid var(--border-court); background: var(--surface2); color: var(--white);
+    padding: 12px 16px; font-size: 14px; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .btn:disabled { opacity: 0.5; }
+  .btn.sm { padding: 7px 11px; font-size: 12px; border-radius: 9px; }
+  .btn.gold { background: var(--gold); color: #0C0D10; border-color: var(--gold); }
+  .btn.ghost { background: transparent; }
+  .btn.danger { color: #FF8A8C; border-color: rgba(240,89,91,0.45); background: transparent; }
+  .btn.block { width: 100%; padding: 15px 16px; font-size: 16px; }
+
+  .pin-box { max-width: 360px; margin: 40px auto; text-align: center; }
+  .pin-box input {
+    width: 100%; font-size: 28px; letter-spacing: 8px; text-align: center; padding: 14px; margin: 16px 0 12px;
+    border-radius: 12px; border: 1px solid var(--border-court); background: var(--surface); color: var(--white);
+    font-family: 'Oswald', sans-serif;
+  }
+  .err { color: #FF8A8C; font-size: 14px; margin-top: 8px; min-height: 20px; }
+
+  .cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-bottom: 16px; }
+  .cat-btn {
+    text-align: left; padding: 9px 10px; border-radius: 11px; cursor: pointer; min-width: 0;
+    background: var(--surface); border: 1px solid var(--border-court); color: var(--white);
+    font-family: 'Archivo', sans-serif; -webkit-tap-highlight-color: transparent;
+  }
+  .cat-btn b { display: block; font-size: 15px; font-weight: 800; white-space: nowrap; }
+  .cat-btn span { font-family: 'Oswald', sans-serif; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--dim); }
+  .cat-btn.progress span { color: #FF8A8C; }
+  .cat-btn.complete span { color: var(--gold-light); }
+  .cat-btn.sel { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; background: rgba(229,164,0,0.10); }
+  .cat-btn.postponed { opacity: 0.55; }
+
+  .group-label {
+    font-family: 'Oswald', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--gold-light); margin: 22px 0 10px;
+  }
+  .ecard { background: var(--surface); border: 1px solid var(--border-court); border-radius: 14px; padding: 13px; margin-bottom: 12px; }
+  .ecard.editing { border-color: var(--gold); box-shadow: 0 0 0 1px rgba(229,164,0,0.4); }
+  .ecard-meta { font-family: 'Oswald', sans-serif; font-size: 12px; letter-spacing: 1.3px; text-transform: uppercase; color: var(--dim); margin-bottom: 9px; display: flex; gap: 8px; }
+  .ecard-meta b { color: var(--white); font-weight: 600; }
+  .ecard-meta .right { margin-left: auto; }
+  .hint { font-size: 12px; color: var(--dim); margin: 0 0 7px 2px; }
+  .pbtn {
+    display: flex; align-items: center; gap: 10px; width: 100%; min-height: 54px;
+    padding: 10px 14px; border-radius: 12px; cursor: pointer; text-align: left;
+    background: var(--bg); border: 1px solid rgba(255,255,255,0.12); color: var(--white);
+    font-family: 'Archivo', sans-serif; font-size: 17px; font-weight: 700; -webkit-tap-highlight-color: transparent;
+  }
+  .pbtn + .pbtn { margin-top: 8px; }
+  .pbtn .nm { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .pbtn.sel { background: rgba(255,206,92,0.16); border: 2px solid var(--gold); }
+  .pbtn.dim { opacity: 0.45; }
+  .pbtn .chk { width: 24px; color: var(--gold); font-weight: 900; flex-shrink: 0; }
+  .editor { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border-court); }
+  .seg { display: flex; gap: 6px; margin-bottom: 12px; }
+  .seg button { flex: 1; }
+  .seg .on { background: rgba(229,164,0,0.18); border-color: var(--gold); color: var(--gold-light); }
+  .score-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .score-row label { font-size: 12px; color: var(--dim); display: block; margin-bottom: 4px; }
+  .score-row .f { flex: 1; }
+  .score-row input {
+    width: 100%; font-family: 'Oswald', sans-serif; font-size: 24px; text-align: center; padding: 10px 6px;
+    border-radius: 10px; border: 1px solid var(--border-court); background: var(--bg); color: var(--white);
+  }
+  .score-row .dash { font-family: 'Oswald', sans-serif; font-size: 24px; color: var(--dim); padding-top: 18px; }
+  .row-btns { display: flex; gap: 8px; margin-top: 10px; }
+  .row-btns .btn { flex: 1; }
+  .linkish { background: none; border: none; color: var(--dim); text-decoration: underline; font-size: 13px; margin-top: 12px; cursor: pointer; padding: 6px 0; font-family: 'Archivo', sans-serif; }
+  .problem { color: #FF8A8C; font-size: 13px; margin-bottom: 8px; }
+  .done-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .done-actions .btn { flex: 1; }
+  .auto-note { font-size: 12px; color: var(--dim); margin-top: 8px; }
+
+  .toast {
+    position: fixed; left: 12px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 200;
+    max-width: 616px; margin: 0 auto; background: #1E2A22; border: 1px solid rgba(34,184,114,0.6);
+    border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5); font-size: 14px;
+  }
+  .toast.bad { background: #2A1A1B; border-color: rgba(240,89,91,0.6); }
+  .toast .msg { flex: 1; }
+  .busy-veil { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 150; display: none; }
+  .busy-veil.on { display: block; }
+  details.issues { background: rgba(240,89,91,0.08); border: 1px solid rgba(240,89,91,0.35); border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; font-size: 13px; }
+  details.issues summary { cursor: pointer; font-weight: 700; }
+  details.issues div { margin-top: 6px; color: var(--white); }
+  details.info { background: rgba(127,182,217,0.08); border-color: rgba(127,182,217,0.35); }
+</style>
+</head>
+<body>
+<header class="site-header"><div class="header-inner">
+  <a class="header-logo" href="index.html">BIS Badminton<span>Results entry — admin</span></a>
+</div></header>
+
+<div class="page-wrap" id="app"></div>
+<div class="busy-veil" id="veil"></div>
+<div id="toast-slot"></div>
+
+<script src="seed.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+<script>
+var C = APP.C, esc = APP.esc;
+var PIN_KEY = 'bisbad_pin', CAT_KEY = 'bisbad_admin_cat';
+var PIN = APP.lsGet(PIN_KEY) || '';
+var DATA = null, MODEL = null, SOURCE = '';
+var CAT = APP.lsGet(CAT_KEY) || '';
+var EDIT = null;          // { id, winner, outcome, w, l }
+var BUSY = false;
+var app = document.getElementById('app');
+
+// ── server calls ─────────────────────────────────────────────────────
+function post(body) {
+  body.pin = PIN;
+  return fetch(C.API_URL, {
+    method: 'POST', redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body)
+  }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+}
+
+function setBusy(on) { BUSY = on; document.getElementById('veil').className = 'busy-veil' + (on ? ' on' : ''); }
+
+function refresh(quiet) {
+  if (BUSY) return Promise.resolve();
+  return APP.load().then(function (res) {
+    if (EDIT && quiet) return;            // never re-render under someone's thumb
+    DATA = res.data; SOURCE = res.source;
+    draw();
+  });
+}
+
+// ── PIN ──────────────────────────────────────────────────────────────
+function drawPin(msg) {
+  app.innerHTML =
+    '<div class="pin-box"><div class="page-title" style="font-size:30px">Enter Results</div>' +
+    (C.API_URL ? '<div class="hint">Admin PIN (from the Config tab of the Google Sheet)</div>' +
+      '<input id="pin" type="password" inputmode="numeric" autocomplete="one-time-code" maxlength="12">' +
+      '<button class="btn gold block" id="unlock">Unlock</button><div class="err" id="pin-err">' + esc(msg || '') + '</div>'
+    : '<div class="notice" style="text-align:left">Not connected yet. Paste the Apps Script web app URL into <b>config.js → API_URL</b>, then reload this page.</div>') +
+    '</div>';
+  if (!C.API_URL) return;
+  var inp = document.getElementById('pin');
+  inp.focus();
+  function go() {
+    var v = inp.value.trim();
+    if (!v) return;
+    PIN = v;
+    document.getElementById('unlock').disabled = true;
+    document.getElementById('pin-err').textContent = 'Checking…';
+    post({ action: 'ping' }).then(function (r) {
+      if (r.ok) { APP.lsSet(PIN_KEY, PIN); DATA = r.data; SOURCE = 'live'; draw(); }
+      else { PIN = ''; drawPin(r.error || 'Wrong PIN'); }
+    }).catch(function () { PIN = ''; drawPin('Could not reach the Google Sheet. Check the connection and try again.'); });
+  }
+  document.getElementById('unlock').onclick = go;
+  inp.onkeydown = function (e) { if (e.key === 'Enter') go(); };
+}
+
+// ── MAIN VIEW ────────────────────────────────────────────────────────
+function draw() {
+  if (!PIN || !C.API_URL) return drawPin();
+  MODEL = BADM.build(DATA);
+  var cats = MODEL.categories.filter(function (c) { return c.kind === 'bracket'; });
+  if (!CAT || !MODEL.byName[CAT.toLowerCase()] || MODEL.byName[CAT.toLowerCase()].kind !== 'bracket') {
+    var live = cats.filter(function (c) { return c.state === 'progress'; })[0];
+    var next = cats.filter(function (c) { return c.state === 'upcoming'; })[0];
+    CAT = (live || next || cats[0]).name;
+  }
+  var cat = MODEL.byName[CAT.toLowerCase()];
+
+  var h = '';
+  h += '<div class="adm-bar"><div class="refresh-bar"><span class="live-dot ' + (SOURCE === 'live' ? '' : 'err') + '"></span><span>' +
+    (SOURCE === 'live' ? 'Connected · ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Not connected — showing last copy') +
+    '</span></div><button class="btn sm ghost" id="reload">↻ Refresh</button><a class="btn sm ghost" href="index.html" style="text-decoration:none">Site</a></div>';
+
+  // Sheet problems (houses summarised)
+  var errs = MODEL.issues.filter(function (i) { return i.level === 'error' && !/has no house, so/.test(i.msg); });
+  var noHouse = MODEL.issues.filter(function (i) { return /has no house yet/.test(i.msg); });
+  if (errs.length) {
+    h += '<details class="issues" open><summary>⚠️ ' + errs.length + ' problem' + (errs.length > 1 ? 's' : '') + ' in the Sheet</summary>' +
+      errs.map(function (i) { return '<div>• ' + esc((i.category ? i.category + ': ' : '') + i.msg) + '</div>'; }).join('') + '</details>';
+  }
+  if (noHouse.length) {
+    h += '<details class="issues info"><summary>🏠 ' + noHouse.length + ' player' + (noHouse.length > 1 ? 's' : '') + ' still need a house in the Sheet</summary>' +
+      noHouse.map(function (i) { return '<div>• ' + esc(i.category + ': ' + i.msg.replace(' has no house yet.', '')) + '</div>'; }).join('') +
+      '<div style="color:var(--dim)">Results can still be entered. Points only count once the house is filled in.</div></details>';
+  }
+
+  h += '<div class="cat-grid">' + cats.map(function (c) {
+    var sub = c.state === 'postponed' ? 'Postponed' : c.state === 'complete' ? 'Done ✓' : c.played + '/' + c.total;
+    var t = c.state === 'postponed' || c.state === 'complete' ? '' : String(c.session || '').replace(/\s*(AM|PM|Noon)$/i, '');
+    return '<button class="cat-btn ' + c.state + (c.name === CAT ? ' sel' : '') + '" data-cat="' + esc(c.name) + '"><b>' + esc(c.name) + '</b><span>' +
+      (t ? esc(t) + ' · ' : '') + sub + '</span></button>';
+  }).join('') + '</div>';
+
+  h += catView(cat);
+  app.innerHTML = h;
+  wire();
+}
+
+function catView(c) {
+  var h = '<div class="cat-card"><div class="cat-card-top"><span class="cat-card-name">' + esc(c.name) + '</span>' + APP.stateBadge(c) + '</div>' +
+    '<div class="cat-card-info">' + c.played + ' of ' + c.total + ' matches entered</div></div>';
+  if (c.postponed) {
+    return h + '<div class="notice">This category is marked <b>POSTPONED</b> in the Categories tab of the Sheet. Clear that cell when it is rescheduled to enter results here.</div>';
+  }
+  if (c.state === 'complete') {
+    h += '<div class="podium">' + c.podium.map(function (p) {
+      return '<div class="pod p' + p.pos + '"><span class="md">' + APP.medal(p.pos) + '</span><span class="who"><span class="nm">' + APP.pname(p.player) +
+        '</span><span class="sub">' + (p.player.house || 'House not set') + '</span></span><span class="pt">+' + p.pts + '</span></div>';
+    }).join('') + '</div>';
+  }
+  var ready = c.matches.filter(function (m) { return m.status === 'ready'; });
+  var waiting = c.matches.filter(function (m) { return m.status === 'waiting'; });
+  var done = c.matches.filter(function (m) { return m.status === 'done'; });
+
+  h += '<div class="group-label">Ready to play (' + ready.length + ')</div>';
+  h += ready.length ? ready.map(readyCard).join('') : '<div class="empty">' + (c.state === 'complete' ? 'Category finished 🎉' : 'Nothing ready — waiting on results below.') + '</div>';
+  if (waiting.length) {
+    h += '<div class="group-label">Waiting for earlier results (' + waiting.length + ')</div>';
+    h += '<div class="match-list">' + waiting.map(function (m) { return APP.matchCard(m); }).join('') + '</div>';
+  }
+  if (done.length) {
+    h += '<div class="group-label">Done (' + done.length + ')</div>';
+    h += done.slice().reverse().map(function (m) {
+      return EDIT && EDIT.id === m.id ? readyCard(m) : doneCard(m);
+    }).join('');
+  }
+  return h;
+}
+
+function ruleText(m) { return m.rk === '3p' ? '' : APP.roundRule(m.rk); }
+
+function readyCard(m) {
+  var ed = EDIT && EDIT.id === m.id ? EDIT : null;
+  var h = '<div class="ecard' + (ed ? ' editing' : '') + '" id="card-' + esc(m.id) + '">' +
+    '<div class="ecard-meta"><b>' + esc(m.label) + '</b><span>' + esc(m.rk === 'f' || m.rk === '3p' ? '' : m.round) + '</span><span class="right">' + esc(ruleText(m)) + '</span></div>';
+  if (m.problem) h += '<div class="problem">⚠️ ' + esc(m.problem) + ' Enter the correct result.</div>';
+  h += '<div class="hint">Tap the winner</div>';
+  ['a', 'b'].forEach(function (k) {
+    var p = m[k];
+    var sel = ed && ed.outcome !== 'double' && ed.winner && BADM.key(ed.winner) === p.key;
+    var dim = ed && ed.winner && !sel;
+    h += '<button class="pbtn' + (sel ? ' sel' : '') + (dim ? ' dim' : '') + '" data-pick="' + esc(m.id) + '" data-name="' + esc(p.name) + '">' +
+      '<span class="chk">' + (sel ? '✓' : '') + '</span><span class="nm ' + APP.hcls(p.house) + '">' + esc(p.name) + '</span>' + APP.houseTag(p.house) + '</button>';
+  });
+  if (ed && ed.winner) h += editor(m, ed);
+  else if (ed && ed.outcome === 'double') h += doubleEditor(m);
+  else h += '<button class="linkish" data-double="' + esc(m.id) + '">Neither player turned up</button>';
+  return h + '</div>';
+}
+
+function editor(m, ed) {
+  var loser = BADM.key(m.a.name) === BADM.key(ed.winner) ? m.b : m.a;
+  return '<div class="editor">' +
+    '<div class="seg"><button class="btn sm' + (ed.outcome === 'played' ? ' on' : '') + '" data-outcome="played">Played</button>' +
+    '<button class="btn sm' + (ed.outcome === 'walkover' ? ' on' : '') + '" data-outcome="walkover">Walkover</button></div>' +
+    (ed.outcome === 'played'
+      ? '<div class="score-row"><div class="f"><label>' + esc(firstName(ed.winner)) + ' (winner)</label><input id="sw" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="30" placeholder="—" value="' + esc(ed.w) + '"></div>' +
+        '<div class="dash">–</div><div class="f"><label>' + esc(firstName(loser.name)) + '</label><input id="sl" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="30" placeholder="—" value="' + esc(ed.l) + '"></div></div>' +
+        '<div class="hint">Score is optional — leave blank if you don\'t have it.</div>'
+      : '<div class="hint">' + esc(loser.name) + ' did not turn up / could not play. ' + esc(ed.winner) + ' goes through.</div>') +
+    '<div class="err" id="edit-err"></div>' +
+    '<button class="btn gold block" id="save">Save · ' + esc(ed.winner) + ' wins</button>' +
+    '<div class="row-btns"><button class="btn ghost" id="cancel">Cancel</button></div></div>';
+}
+
+function doubleEditor(m) {
+  return '<div class="editor"><div class="hint">Both players absent: nobody goes through from ' + esc(m.label) +
+    '. Their next opponent will go through automatically.</div><div class="err" id="edit-err"></div>' +
+    '<button class="btn gold block" id="save">Save · neither player turned up</button>' +
+    '<div class="row-btns"><button class="btn ghost" id="cancel">Cancel</button></div></div>';
+}
+
+function doneCard(m) {
+  var h = '<div class="ecard" id="card-' + esc(m.id) + '">' + APP.matchCard(m).replace('class="mcard', 'style="border:none;padding:0;background:none" class="mcard');
+  if (m.hasStored) {
+    h += '<div class="done-actions"><button class="btn sm" data-change="' + esc(m.id) + '">Change</button>' +
+      '<button class="btn sm danger" data-undo="' + esc(m.id) + '">Undo</button></div>';
+  } else {
+    h += '<div class="auto-note">Decided automatically (' + (m.how === 'empty' ? 'no players' : 'opponent had a bye / no-show') + ').</div>';
+  }
+  return h + '</div>';
+}
+
+function firstName(n) { return String(n || '').split(' ')[0]; }
+
+// ── interactions ─────────────────────────────────────────────────────
+function wire() {
+  var rl = document.getElementById('reload');
+  if (rl) rl.onclick = function () { EDIT = null; refresh(false); };
+  app.querySelectorAll('[data-cat]').forEach(function (b) {
+    b.onclick = function () {
+      CAT = b.getAttribute('data-cat'); APP.lsSet(CAT_KEY, CAT); EDIT = null; draw();
+      window.scrollTo({ top: 0 });
+    };
+  });
+  app.querySelectorAll('[data-pick]').forEach(function (b) {
+    b.onclick = function () {
+      var id = b.getAttribute('data-pick'), name = b.getAttribute('data-name');
+      if (EDIT && EDIT.id === id && EDIT.winner === name) return;
+      var keep = EDIT && EDIT.id === id ? EDIT : null;
+      EDIT = { id: id, winner: name, outcome: keep && keep.outcome !== 'double' ? keep.outcome : 'played', w: keep ? keep.w : '', l: keep ? keep.l : '' };
+      draw(); scrollToCard(id);
+    };
+  });
+  app.querySelectorAll('[data-double]').forEach(function (b) {
+    b.onclick = function () { EDIT = { id: b.getAttribute('data-double'), winner: '', outcome: 'double', w: '', l: '' }; draw(); scrollToCard(EDIT.id); };
+  });
+  app.querySelectorAll('[data-outcome]').forEach(function (b) {
+    b.onclick = function () { keepScores(); EDIT.outcome = b.getAttribute('data-outcome'); draw(); scrollToCard(EDIT.id); };
+  });
+  app.querySelectorAll('[data-change]').forEach(function (b) {
+    b.onclick = function () { changeResult(b.getAttribute('data-change')); };
+  });
+  app.querySelectorAll('[data-undo]').forEach(function (b) {
+    b.onclick = function () { undo(b.getAttribute('data-undo')); };
+  });
+  var cancel = document.getElementById('cancel');
+  if (cancel) cancel.onclick = function () { EDIT = null; draw(); };
+  var save = document.getElementById('save');
+  if (save) save.onclick = doSave;
+}
+
+function scrollToCard(id) {
+  var el = document.getElementById('card-' + id);
+  if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+function keepScores() {
+  var w = document.getElementById('sw'), l = document.getElementById('sl');
+  if (w) EDIT.w = w.value.trim();
+  if (l) EDIT.l = l.value.trim();
+}
+
+function rowOf(id) {
+  for (var i = 0; i < DATA.matches.length; i++) if (DATA.matches[i].match_id === id) return DATA.matches[i];
+  return {};
+}
+
+// Later matches whose saved results would be wiped by this change.
+function affected(m, newWinnerKey, newDouble) {
+  var cur = m.decided ? (m.how === 'double' || m.how === 'empty' ? 'none' : m.winner.key) : 'undecided';
+  var next = newDouble ? 'none' : newWinnerKey;
+  if (cur === next) return [];
+  return BADM.dependents(MODEL, m.id).filter(function (d) { return d.hasStored; });
+}
+
+function describe(d) {
+  if (d.how === 'double') return d.label + ' (both absent)';
+  return d.label + ' (' + (d.winner && d.winner.name ? d.winner.name + ' won' : 'result') + ')';
+}
+
+function doSave() {
+  if (!EDIT) return;
+  keepScores();
+  var m = MODEL.matchById[EDIT.id];
+  var errEl = document.getElementById('edit-err');
+  var body = { action: 'setResult', matchId: m.id, outcome: EDIT.outcome, expect: BADM.storedSig(rowOf(m.id)) };
+  if (EDIT.outcome !== 'double') body.winner = EDIT.winner;
+  if (EDIT.outcome === 'played') {
+    var chk = BADM.checkScore(m.rk, EDIT.w, EDIT.l);
+    if (!chk.ok) { errEl.textContent = chk.error; return; }
+    if (chk.warn && !confirm(chk.warn + '\n\nSave anyway?')) return;
+    if (!chk.empty) { body.wPts = Number(EDIT.w); body.lPts = Number(EDIT.l); }
+  }
+  var deps = affected(m, EDIT.outcome === 'double' ? null : BADM.key(EDIT.winner), EDIT.outcome === 'double');
+  if (deps.length && !confirm('This changes who goes through, so these later results will be cleared and need re-entering:\n\n• ' +
+      deps.map(describe).join('\n• ') + '\n\nContinue?')) return;
+  send(body);
+}
+
+function changeResult(id) {
+  var m = MODEL.matchById[id];
+  if (m.how === 'double') EDIT = { id: id, winner: '', outcome: 'double', w: '', l: '' };
+  else EDIT = { id: id, winner: m.winner.name, outcome: m.how === 'walkover' ? 'walkover' : 'played', w: m.wPts === null ? '' : String(m.wPts), l: m.lPts === null ? '' : String(m.lPts) };
+  draw();
+  scrollToCard(id);
+}
+
+function undo(id) {
+  var m = MODEL.matchById[id];
+  var deps = BADM.dependents(MODEL, id).filter(function (d) { return d.hasStored; });
+  var msg = 'Undo ' + m.category + ' ' + m.label + ' (' + (m.how === 'double' ? 'both absent' : m.winner.name + ' won') + ')?';
+  if (deps.length) msg += '\n\nThese later results depend on it and will also be cleared:\n• ' + deps.map(describe).join('\n• ');
+  if (!confirm(msg)) return;
+  send({ action: 'clearResult', matchId: id, expect: BADM.storedSig(rowOf(id)) });
+}
+
+function send(body) {
+  document.getElementById('toast-slot').innerHTML = '';   // an old toast's Undo must not be tappable mid-save
+  setBusy(true);
+  var save = document.getElementById('save');
+  if (save) { save.disabled = true; save.textContent = 'Saving…'; }
+  post(body).then(function (r) {
+    setBusy(false);
+    if (r.code === 'PIN' || r.code === 'NOPIN') { APP.lsDel(PIN_KEY); PIN = ''; drawPin(r.error); return; }
+    if (r.data) { DATA = r.data; SOURCE = 'live'; }
+    if (r.ok) {
+      var id = body.matchId;
+      EDIT = null; draw();
+      var extra = r.cleared && r.cleared.length ? ' · cleared ' + r.cleared.map(function (c) { return c.label; }).join(', ') : '';
+      toast('✓ Saved — ' + (r.message || '') + extra, body.action === 'setResult' ? id : null);
+    } else if (r.code === 'STALE') {
+      EDIT = null; draw();
+      toast(r.error, null, true);
+    } else {
+      if (save) { save.disabled = false; save.textContent = 'Try again'; }
+      var e = document.getElementById('edit-err');
+      if (e) e.textContent = r.error || 'Not saved.'; else toast(r.error || 'Not saved.', null, true);
+    }
+  }).catch(function () {
+    setBusy(false);
+    if (save) { save.disabled = false; save.textContent = 'Try again'; }
+    var e = document.getElementById('edit-err');
+    var msg = 'Not saved — no connection. Check your signal and tap again.';
+    if (e) e.textContent = msg; else toast(msg, null, true);
+  });
+}
+
+var toastTimer = null;
+function toast(msg, undoId, bad) {
+  var slot = document.getElementById('toast-slot');
+  slot.innerHTML = '<div class="toast' + (bad ? ' bad' : '') + '"><span class="msg">' + esc(msg) + '</span>' +
+    (undoId ? '<button class="btn sm" id="t-undo">Undo</button>' : '') + '<button class="btn sm ghost" id="t-x">✕</button></div>';
+  document.getElementById('t-x').onclick = function () { slot.innerHTML = ''; };
+  var u = document.getElementById('t-undo');
+  if (u) u.onclick = function () { slot.innerHTML = ''; undo(undoId); };
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { slot.innerHTML = ''; }, bad ? 12000 : 8000);
+}
+
+// ── start ────────────────────────────────────────────────────────────
+if (PIN && C.API_URL) { app.innerHTML = '<div class="empty" style="margin-top:30px">Loading…</div>'; refresh(false); }
+else drawPin();
+setInterval(function () { if (PIN && !document.hidden && !EDIT && !BUSY) refresh(true); }, 30000);
+document.addEventListener('visibilitychange', function () { if (!document.hidden && PIN && !EDIT && !BUSY) refresh(true); });
+</script>
+</body>
+</html>

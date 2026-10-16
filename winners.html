@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BIS Interhouse Badminton 2026–27 — Winners</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏸</text></svg>">
+<link rel="stylesheet" href="styles.css">
+<script src="config.js"></script>
+</head>
+<body>
+<div id="nav-placeholder"></div>
+<div class="page-wrap">
+
+  <div id="warnings"></div>
+  <div class="page-title">Winners</div>
+  <div class="refresh-bar"><span class="live-dot off" id="live-dot"></span><span id="stamp">Connecting…</span></div>
+
+  <div class="filter-bar" id="filters"></div>
+  <div class="res-grid" id="winners"></div>
+
+  <div class="section-head">Points by Category</div>
+  <div class="ptable-wrap"><table class="ptable" id="ptable"></table></div>
+  <div class="foot-note" id="pnote"></div>
+
+</div>
+
+<script src="seed.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+<script>
+APP.analytics();
+APP.mountNav(null);
+var esc = APP.esc;
+var LAST = null, filter = 'all';
+
+function render(res) {
+  if (res) LAST = res;
+  res = LAST;
+  var model = BADM.build(res.data);
+  var cfg = model.config;
+  APP.mountNav(model);
+  APP.stamp(res);
+  document.getElementById('warnings').innerHTML = APP.warningsHTML(res, model);
+
+  document.getElementById('filters').innerHTML = [['all', 'All'], ['Boys', 'Boys'], ['Girls', 'Girls']].map(function (f) {
+    return '<button class="filter-btn' + (filter === f[0] ? ' active' : '') + '" data-f="' + f[0] + '">' + f[1] + '</button>';
+  }).join('');
+
+  var cats = model.byAge.filter(function (c) { return filter === 'all' || new RegExp(filter, 'i').test(c.name); });
+  document.getElementById('winners').innerHTML = cats.map(function (c) {
+    var body = '';
+    if (c.state === 'complete' && c.podium.length) {
+      body = c.podium.map(function (p) {
+        return '<div class="pod-line"><span class="md">' + APP.medal(p.pos) + '</span><span class="nm">' + APP.pname(p.player) + '</span>' +
+          APP.houseTag(p.player.house) + '<span class="pt">+' + p.pts + '</span></div>';
+      }).join('');
+      if (c.kind === 'single') body += '<div class="res-sub">Single entry — 1st place by walkover</div>';
+      else if (!c.podium.some(function (p) { return p.pos === 3; }) && c.third) body += '<div class="res-sub">No 3rd place (no-show)</div>';
+    } else if (c.state === 'progress') {
+      body = '<div class="res-sub">In progress — ' + c.played + ' of ' + c.total + ' matches played</div>';
+    } else if (c.state === 'postponed') {
+      body = '<div class="res-sub">' + esc(c.note || 'Postponed') + '</div>';
+    } else if (c.state === 'single') {
+      body = '<div class="res-sub">Single entry: ' + APP.pname(c.players[0]) + ' (no points)</div>';
+    } else {
+      body = '<div class="res-sub">Upcoming' + (c.session ? ' · starts ' + esc(c.session) : '') + '</div>';
+    }
+    return '<a class="res-item ' + c.state + '" href="draws.html#' + APP.catSlug(c.name) + '">' +
+      '<div class="res-head"><span class="res-cat">' + esc(c.name) + '</span>' + APP.stateBadge(c) + '</div>' + body + '</a>';
+  }).join('') || '<div class="empty">Nothing here yet.</div>';
+
+  // Points table — only completed categories count
+  var H = BADM.HOUSES;
+  var rows = model.byAge.filter(function (c) { return !(c.kind === 'single' && c.state === 'single'); }).map(function (c) {
+    var counted = c.state === 'complete';
+    return '<tr><td>' + esc(c.name) + (counted ? '' : ' <span style="color:var(--dim);font-size:12px">· ' + (c.state === 'postponed' ? 'postponed' : c.state === 'progress' ? 'in progress' : 'upcoming') + '</span>') + '</td>' +
+      H.map(function (h) {
+        var v = counted ? c.points[h] : null;
+        return '<td class="num ' + (v ? 'h-' + h : 'zero') + '">' + (v === null ? '–' : v) + '</td>';
+      }).join('') + '</tr>';
+  }).join('');
+  document.getElementById('ptable').innerHTML =
+    '<thead><tr><th>Category</th>' + H.map(function (h) { return '<th class="h-' + h + '" style="color:var(--' + h.toLowerCase() + ')">' + h + '</th>'; }).join('') + '</tr></thead>' +
+    '<tbody>' + rows + '<tr class="total"><td>Total</td>' + H.map(function (h) { return '<td class="h-' + h + '">' + model.totals[h] + '</td>'; }).join('') + '</tr></tbody>';
+  document.getElementById('pnote').innerHTML =
+    'Points count once a category is finished (final and 3rd place match played): 1st = ' + cfg.points[0] + ', 2nd = ' + cfg.points[1] + ', 3rd = ' + cfg.points[2] +
+    '. A house can score more than one place in the same category. Houses level on points share a position.';
+}
+
+document.getElementById('filters').addEventListener('click', function (e) {
+  var b = e.target.closest('.filter-btn');
+  if (!b) return;
+  filter = b.getAttribute('data-f');
+  render();
+});
+
+APP.autoRefresh(render);
+</script>
+</body>
+</html>
