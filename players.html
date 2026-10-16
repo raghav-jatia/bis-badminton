@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BIS Interhouse Badminton 2026-27 - Players</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏸</text></svg>">
+<link rel="stylesheet" href="styles.css">
+<script src="config.js"></script>
+</head>
+<body>
+<div id="nav-placeholder"></div>
+<div class="page-wrap">
+
+  <div id="warnings"></div>
+  <div class="page-title">Players</div>
+  <div class="refresh-bar"><span class="live-dot off" id="live-dot"></span><span id="stamp">Connecting…</span></div>
+
+  <div class="filter-bar" id="filters"></div>
+  <div id="grid"></div>
+
+</div>
+
+<script src="seed.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+<script>
+APP.analytics();
+APP.mountNav(null);
+var esc = APP.esc;
+var LAST = null, filter = 'all';
+var H = ['Alpha', 'Beta', 'Gamma'];
+
+function render(res) {
+  if (res) LAST = res;
+  res = LAST;
+  var model = BADM.build(res.data);
+  APP.mountNav(model);
+  APP.stamp(res, model);
+  document.getElementById('warnings').innerHTML = APP.warningsHTML(res, model);
+
+  document.getElementById('filters').innerHTML = [['all', 'All'], ['Boys', 'Boys'], ['Girls', 'Girls']].map(function (f) {
+    return '<button class="filter-btn' + (filter === f[0] ? ' active' : '') + '" data-f="' + f[0] + '">' + f[1] + '</button>';
+  }).join('');
+
+  var cats = model.byAge.filter(function (c) { return filter === 'all' || new RegExp(filter, 'i').test(c.name); });
+
+  // house totals across the categories shown
+  var tot = { Alpha: 0, Beta: 0, Gamma: 0 };
+  cats.forEach(function (c) { c.players.forEach(function (p) { if (p.house) tot[p.house]++; }); });
+
+  var html = '<div class="pl-table"><div class="pl-head">' + H.map(function (h) {
+    return '<div class="ph ph-' + h + '">' + h + '<span>' + tot[h] + '</span></div>';
+  }).join('') + '</div>';
+
+  html += cats.map(function (c) {
+    var link = 'draws.html#' + APP.catSlug(c.name);
+    var tbc = c.players.filter(function (p) { return !p.house; });
+    var label = c.postponed ? ' · postponed' : '';
+    return '<a class="pl-cat" href="' + link + '"><b>' + esc(c.name) + '</b><span>' + c.players.length + ' player' + (c.players.length === 1 ? '' : 's') + esc(label) + '</span></a>' +
+      '<div class="pl-row">' + H.map(function (h) {
+        var list = c.players.filter(function (p) { return p.house === h; })
+          .sort(function (a, b) { return a.name.localeCompare(b.name); });
+        return '<div class="pl-cell">' + (list.length
+          ? list.map(function (p) { return '<a class="pl-name h-' + h + '" href="' + link + '">' + esc(p.name) + '</a>'; }).join('')
+          : '<span class="pl-none">-</span>') + '</div>';
+      }).join('') + '</div>' +
+      (tbc.length ? '<div class="pl-tbc">House to be confirmed: ' + tbc.map(function (p) { return esc(p.name); }).join(', ') + '</div>' : '');
+  }).join('');
+
+  html += '</div>';
+  document.getElementById('grid').innerHTML = cats.length ? html : '<div class="empty">No players to show.</div>';
+}
+
+document.getElementById('filters').addEventListener('click', function (e) {
+  var b = e.target.closest('.filter-btn');
+  if (!b) return;
+  filter = b.getAttribute('data-f');
+  render();
+});
+
+APP.autoRefresh(render);
+</script>
+</body>
+</html>

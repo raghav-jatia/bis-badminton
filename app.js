@@ -104,7 +104,7 @@ var APP = (function () {
   function mountNav(model) {
     var page = location.pathname.split('/').pop() || 'index.html';
     var cfg = model ? model.config : null;
-    var links = [['index.html', 'Home'], ['schedule.html', 'Schedule'], ['draws.html', 'Draws'], ['winners.html', 'Winners']];
+    var links = [['index.html', 'Home'], ['draws.html', 'Draws'], ['winners.html', 'Winners'], ['schedule.html', 'Schedule'], ['players.html', 'Players']];
     var html =
       '<header class="site-header"><div class="header-inner">' +
       '<a class="header-logo" href="index.html">BIS Badminton<span>Interhouse Championship - 2026-27</span></a>' +
@@ -118,6 +118,12 @@ var APP = (function () {
       '</div></nav>';
     var ph = document.getElementById('nav-placeholder');
     if (ph) ph.innerHTML = html;
+  }
+
+  // Lets sticky table headers sit just below the sticky site header.
+  function stickyOffset() {
+    var hd = document.querySelector('.site-header');
+    if (hd) document.documentElement.style.setProperty('--hdr-h', hd.offsetHeight + 'px');
   }
 
   // ── Google Analytics (public pages only) ───────────────────────────
@@ -251,7 +257,7 @@ var APP = (function () {
   }
 
   return {
-    C: C, esc: esc, load: load, autoRefresh: autoRefresh, stamp: stamp, mountNav: mountNav, analytics: analytics,
+    C: C, esc: esc, load: load, stickyOffset: stickyOffset, autoRefresh: autoRefresh, stamp: stamp, mountNav: mountNav, analytics: analytics,
     pname: pname, houseTag: houseTag, medal: medal, ordinal: ordinal, hcls: hcls,
     catSlug: catSlug, catFromSlug: catFromSlug, stateBadge: stateBadge, catTile: catTile, roundRule: roundRule, clock: clock,
     prow: prow, matchCard: matchCard, warningsHTML: warningsHTML,

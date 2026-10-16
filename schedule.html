@@ -18,6 +18,7 @@
 
   <div class="notice">Arrive at the venue <b>20 minutes</b> before your category's start time and report to the match desk <b>5 minutes</b> before your match. Finish times are approximate and depend on how matches progress.</div>
 
+  <div class="filter-bar" id="filters"></div>
   <div id="sessions"></div>
 
   <div class="section-head">Match Format</div>
@@ -42,9 +43,26 @@
 APP.analytics();
 APP.mountNav(null);
 var esc = APP.esc;
+var LAST = null, SEL = 'all';   // SEL: 'all' or a category name
 
 function render(res) {
+  if (res) LAST = res;
+  res = LAST;
   var model = BADM.build(res.data);
+  if (SEL === 'all' && location.hash.length > 1) {
+    var fromHash = APP.catFromSlug(model, location.hash.slice(1));
+    if (fromHash) SEL = fromHash.name;
+  }
+  if (SEL !== 'all' && !model.byName[SEL.toLowerCase()]) SEL = 'all';
+  var show = function (c) { return SEL === 'all' || c.name === SEL; };
+
+  // Category filter pills (same order as the Draws page)
+  document.getElementById('filters').innerHTML =
+    '<button class="filter-btn' + (SEL === 'all' ? ' active' : '') + '" data-c="all">All</button>' +
+    model.byAge.map(function (c) {
+      var dot = c.state === 'progress' ? '<span class="dot dot-progress"></span>' : c.state === 'complete' ? '<span class="dot dot-complete"></span>' : '';
+      return '<button class="filter-btn' + (c.name === SEL ? ' active' : '') + '" data-c="' + esc(c.name) + '">' + dot + esc(c.name) + '</button>';
+    }).join('');
   APP.mountNav(model);
   APP.stamp(res, model);
   document.getElementById('warnings').innerHTML = APP.warningsHTML(res, model);
@@ -52,7 +70,7 @@ function render(res) {
   // Sessions in the order of the Categories tab
   var sessions = [], bySession = {};
   model.categories.forEach(function (c) {
-    if (!c.session || c.postponed || c.kind !== 'bracket') return;
+    if (!c.session || c.postponed || c.kind !== 'bracket' || !show(c)) return;
     if (!bySession[c.session]) { bySession[c.session] = { time: c.session, until: c.dispersal, cats: [] }; sessions.push(bySession[c.session]); }
     bySession[c.session].cats.push(c);
   });
@@ -69,16 +87,16 @@ function render(res) {
       s.cats.map(catRow).join('') + '</div>';
   }).join('');
 
-  var post = model.categories.filter(function (c) { return c.postponed; });
+  var post = model.categories.filter(function (c) { return c.postponed && show(c); });
   if (post.length) {
     html += '<div class="sess"><div class="sess-head"><span class="sess-time">Date TBA</span><span class="status-badge st-postponed">Postponed</span></div>' +
       post.map(function (c) {
         return '<a class="sess-row" href="draws.html#' + APP.catSlug(c.name) + '"><div class="sess-row-top"><span class="sess-cat">' + esc(c.name) + '</span></div>' +
-          '<div class="sess-meta"><span>' + esc(c.note || 'New date to be announced.') + '</span></div></a>';
+          '<div class="sess-meta"><span>' + esc(c.note || 'New date to be announced.') + '</span></div>' + whoPlays(c) + '</a>';
       }).join('') + '</div>';
   }
 
-  var singles = model.categories.filter(function (c) { return c.kind === 'single' && !c.postponed; });
+  var singles = model.categories.filter(function (c) { return c.kind === 'single' && !c.postponed && show(c); });
   if (singles.length) {
     html += '<div class="sess"><div class="sess-head"><span class="sess-time">No matches</span><span class="sess-until">single entry</span></div>' +
       singles.map(function (c) {
@@ -103,8 +121,23 @@ function catRow(c) {
   return '<a class="sess-row" href="draws.html#' + APP.catSlug(c.name) + '">' +
     '<div class="sess-row-top"><span class="sess-cat">' + esc(c.name) + '</span>' + APP.stateBadge(c) + '</div>' +
     '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
-    '<div class="sess-meta"><span><b>' + c.played + '</b> of ' + c.total + ' matches played</span><span>' + right + '</span></div></a>';
+    '<div class="sess-meta"><span><b>' + c.played + '</b> of ' + c.total + ' matches played</span><span>' + right + '</span></div>' + whoPlays(c) + '</a>';
 }
+
+// When one category is picked, list its players so parents can find their child.
+function whoPlays(c) {
+  if (SEL === 'all') return '';
+  var list = c.players.slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+  return '<div class="sess-players">' + list.map(function (p) { return APP.pname(p); }).join(' · ') + '</div>';
+}
+
+document.getElementById('filters').addEventListener('click', function (e) {
+  var b = e.target.closest('.filter-btn');
+  if (!b) return;
+  SEL = b.getAttribute('data-c');
+  history.replaceState(null, '', SEL === 'all' ? location.pathname : '#' + APP.catSlug(SEL));
+  render();
+});
 
 APP.autoRefresh(render);
 </script>
